@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <title>Online Games (WebSocket)</title>
+    <meta charset="UTF-8"/>
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+</head>
+<body>
+<div class="container">
+    <section class="section">
+        <h1 class="title">Сетевая игра (WebSocket)</h1>
+        <p>Ваш ник: <span th:text="${nick}">Guest</span></p>
+        <form action="/create-online" method="post">
+            <button class="button is-primary">Создать новую игру</button>
+        </form>
+        <hr/>
+        <h2 class="subtitle">Список игр:</h2>
+        <table class="table is-fullwidth">
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>Игрок X</th>
+                <th>Игрок O</th>
+                <th>Статус</th>
+                <th>Действие</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="g : ${games}">
+                <td th:text="${g.gameId}">?</td>
+                <td th:text="${g.playerX}">X</td>
+                <td th:text="${g.playerO}">O</td>
+                <td>
+                    <span th:if="${g.waitingForSecondPlayer}">Ожидание</span>
+                    <span th:if="${!g.waitingForSecondPlayer}">Идёт игра</span>
+                </td>
+                <td>
+                    <a class="button is-small is-info"
+                       th:href="@{/join-online(gameId=${g.gameId})}"
+                       th:if="${g.waitingForSecondPlayer}">
+                        Присоединиться
+                    </a>
+                    <a class="button is-small is-link"
+                       th:href="@{/onlineGame(gameId=${g.gameId})}"
+                       th:if="${!g.waitingForSecondPlayer}">
+                        Перейти
+                    </a>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+        <br/>
+        <a class="button" href="/">Назад</a>
+    </section>
+</div>
+</body>
+</html>

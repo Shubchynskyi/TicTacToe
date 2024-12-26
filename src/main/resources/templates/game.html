@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Local/Single Game</title>
+    <meta charset="UTF-8"/>
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+    <script>
+        async function refreshGameState() {
+            const response = await fetch('/game-state');
+            if (response.ok) {
+                const game = await response.json();
+                updateBoard(game);
+                updateStatus(game);
+            }
+        }
+
+        async function makeMove(r, c) {
+            const response = await fetch(`/make-move?row=${r}&col=${c}`);
+            if (response.ok) {
+                const game = await response.json();
+                updateBoard(game);
+                updateStatus(game);
+            }
+        }
+
+        function updateBoard(game) {
+            for (let i = 0; i < 3; i++) {
+                for (let j = 0; j < 3; j++) {
+                    const cellId = 'cell' + i + j;
+                    const cell = document.getElementById(cellId);
+                    cell.innerText = game.board[i][j] ? game.board[i][j] : '';
+                }
+            }
+        }
+
+        function updateStatus(game) {
+            const statusEl = document.getElementById('status');
+            if (game.gameOver) {
+                if (game.winner === 'DRAW') {
+                    statusEl.innerText = 'Ничья!';
+                } else {
+                    statusEl.innerText = `Победитель: ${game.winner}`;
+                }
+            } else {
+                statusEl.innerText = `Ход: ${game.currentPlayer}`;
+            }
+        }
+
+        window.addEventListener('load', () => {
+            refreshGameState();
+        });
+    </script>
+</head>
+<body>
+<div class="container">
+    <section class="section">
+        <h1 class="title">Игра (локально/одиночная)</h1>
+        <p>Режим: <span th:text="${game.gameMode}">?</span>, Ваш символ: <span th:text="${game.playerSymbol}">?</span></p>
+        <p id="status" style="font-weight: bold;">Загрузка...</p>
+
+        <div style="margin-top: 20px;">
+            <div style="display: flex;">
+                <div id="cell00" class="box"
+                     style="width:60px; height:60px; margin:2px; text-align:center; font-size:24px; cursor:pointer;"
+                     onclick="makeMove(0,0)"></div>
+                <div id="cell01" class="box"
+                     style="width:60px; height:60px; margin:2px; text-align:center; font-size:24px; cursor:pointer;"
+                     onclick="makeMove(0,1)"></div>
+                <div id="cell02" class="box"
+                     style="width:60px; height:60px; margin:2px; text-align:center; font-size:24px; cursor:pointer;"
+                     onclick="makeMove(0,2)"></div>
+            </div>
+            <div style="display: flex;">
+                <div id="cell10" class="box"
+                     style="width:60px; height:60px; margin:2px; text-align:center; font-size:24px; cursor:pointer;"
+                     onclick="makeMove(1,0)"></div>
+                <div id="cell11" class="box"
+                     style="width:60px; height:60px; margin:2px; text-align:center; font-size:24px; cursor:pointer;"
+                     onclick="makeMove(1,1)"></div>
+                <div id="cell12" class="box"
+                     style="width:60px; height:60px; margin:2px; text-align:center; font-size:24px; cursor:pointer;"
+                     onclick="makeMove(1,2)"></div>
+            </div>
+            <div style="display: flex;">
+                <div id="cell20" class="box"
+                     style="width:60px; height:60px; margin:2px; text-align:center; font-size:24px; cursor:pointer;"
+                     onclick="makeMove(2,0)"></div>
+                <div id="cell21" class="box"
+                     style="width:60px; height:60px; margin:2px; text-align:center; font-size:24px; cursor:pointer;"
+                     onclick="makeMove(2,1)"></div>
+                <div id="cell22" class="box"
+                     style="width:60px; height:60px; margin:2px; text-align:center; font-size:24px; cursor:pointer;"
+                     onclick="makeMove(2,2)"></div>
+            </div>
+        </div>
+
+        <br/>
+        <a class="button is-info" href="/">Вернуться</a>
+    </section>
+</div>
+</body>
+</html>

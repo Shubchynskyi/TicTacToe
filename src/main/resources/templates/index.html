@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>TicTacToe</title>
+    <meta charset="UTF-8"/>
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+    <script>
+        // Show/hide single-player settings
+        function onGameModeChange(value) {
+            const singleSettings = document.getElementById('singleSettings');
+            if (value === 'single') {
+                singleSettings.style.display = 'block';
+            } else {
+                singleSettings.style.display = 'none';
+            }
+        }
+
+        function updateNick() {
+            const newNick = document.getElementById('nickInput').value;
+            fetch('/update-nick?nick=' + encodeURIComponent(newNick))
+                .then(() => {
+                    alert('Ник изменён, обновите страницу');
+                });
+        }
+    </script>
+</head>
+<body>
+<div class="container">
+    <section class="section">
+        <h1 class="title">Крестики-Нолики</h1>
+        <p>Ваш ник:
+            <span th:text="${session.nick}">Guest123</span>
+            <input id="nickInput" type="text" placeholder="Изменить ник"
+                   style="margin-left:10px;"/>
+            <button class="button is-small is-info"
+                    style="margin-left:5px;"
+                    onclick="updateNick()">OK</button>
+        </p>
+
+        <br/>
+        <form action="/start" method="get">
+            <div class="field">
+                <label class="label">Режим игры (локально/одиночно):</label>
+                <div class="control">
+                    <label class="radio">
+                        <input type="radio" name="gameMode" value="single"
+                               onclick="onGameModeChange('single')" checked>
+                        Одиночная
+                    </label>
+                    <label class="radio">
+                        <input type="radio" name="gameMode" value="local"
+                               onclick="onGameModeChange('local')">
+                        Локальная (2 игрока за одним экраном)
+                    </label>
+                </div>
+            </div>
+
+            <div id="singleSettings">
+                <div class="field">
+                    <label class="label">Символ (X или O):</label>
+                    <div class="control">
+                        <div class="select">
+                            <select name="playerSymbol">
+                                <option value="X">X</option>
+                                <option value="O">O</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label class="label">Сложность (1..4):</label>
+                    <div class="control">
+                        <div class="select">
+                            <select name="difficulty">
+                                <option value="1">1</option>
+                                <option value="2">2</option>
+                                <option value="3">3</option>
+                                <option value="4">4</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <br/>
+            <button class="button is-primary">Новая локальная/одиночная игра</button>
+        </form>
+
+        <br/>
+        <a class="button is-link" href="/online">Перейти к сетевой игре</a>
+    </section>
+</div>
+</body>
+</html>
