@@ -1,12 +1,11 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <title>TicTacToe</title>
+    <title>TicTacToe - Home</title>
     <meta charset="UTF-8"/>
     <link rel="stylesheet"
           href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
     <script>
-        // Show/hide single-player settings
         function onGameModeChange(value) {
             const singleSettings = document.getElementById('singleSettings');
             if (value === 'single') {
@@ -16,32 +15,34 @@
             }
         }
 
-        function updateNick() {
-            const newNick = document.getElementById('nickInput').value;
-            fetch('/update-nick?nick=' + encodeURIComponent(newNick))
-                .then(() => {
-                    alert('Ник изменён, обновите страницу');
-                });
+        function changeNick() {
+            const newNick = document.getElementById('nickInput').value.trim();
+            if(newNick) {
+                fetch('/update-nick?nick=' + encodeURIComponent(newNick))
+                    .then(() => {
+                        location.reload(); // или другое обновление UI
+                    });
+            }
         }
     </script>
 </head>
 <body>
 <div class="container">
     <section class="section">
-        <h1 class="title">Крестики-Нолики</h1>
+        <h1 class="title">Крестики-Нолики (Главная)</h1>
+
         <p>Ваш ник:
             <span th:text="${session.nick}">Guest123</span>
             <input id="nickInput" type="text" placeholder="Изменить ник"
                    style="margin-left:10px;"/>
             <button class="button is-small is-info"
                     style="margin-left:5px;"
-                    onclick="updateNick()">OK</button>
+                    onclick="changeNick()">Сменить ник</button>
         </p>
 
-        <br/>
         <form action="/start" method="get">
             <div class="field">
-                <label class="label">Режим игры (локально/одиночно):</label>
+                <label class="label">Режим игры:</label>
                 <div class="control">
                     <label class="radio">
                         <input type="radio" name="gameMode" value="single"
@@ -51,11 +52,12 @@
                     <label class="radio">
                         <input type="radio" name="gameMode" value="local"
                                onclick="onGameModeChange('local')">
-                        Локальная (2 игрока за одним экраном)
+                        Локальная (2 игрока)
                     </label>
                 </div>
             </div>
 
+            <!-- Блок для одиночной игры -->
             <div id="singleSettings">
                 <div class="field">
                     <label class="label">Символ (X или O):</label>
@@ -70,26 +72,127 @@
                 </div>
 
                 <div class="field">
-                    <label class="label">Сложность (1..4):</label>
+                    <label class="label">Сложность:</label>
                     <div class="control">
                         <div class="select">
                             <select name="difficulty">
-                                <option value="1">1</option>
-                                <option value="2">2</option>
-                                <option value="3">3</option>
-                                <option value="4">4</option>
+                                <option value="easy">Easy</option>
+                                <option value="medium">Medium</option>
+                                <option value="hard">Hard</option>
+                                <option value="impossible">Impossible</option>
                             </select>
                         </div>
                     </div>
                 </div>
             </div>
-            <br/>
-            <button class="button is-primary">Новая локальная/одиночная игра</button>
+
+            <div class="field" style="margin-top: 20px;">
+                <button class="button is-primary" type="submit">
+                    Новая игра
+                </button>
+            </div>
         </form>
 
         <br/>
-        <a class="button is-link" href="/online">Перейти к сетевой игре</a>
+        <a class="button is-link" href="/online">Перейти к сетевым играм</a>
     </section>
 </div>
 </body>
 </html>
+
+
+<!--<!DOCTYPE html>-->
+<!--<html xmlns:th="http://www.thymeleaf.org">-->
+<!--<head>-->
+<!--    <title>TicTacToe</title>-->
+<!--    <meta charset="UTF-8"/>-->
+<!--    <link rel="stylesheet"-->
+<!--          href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">-->
+<!--    <script>-->
+<!--        // Show/hide single-player settings-->
+<!--        function onGameModeChange(value) {-->
+<!--            const singleSettings = document.getElementById('singleSettings');-->
+<!--            if (value === 'single') {-->
+<!--                singleSettings.style.display = 'block';-->
+<!--            } else {-->
+<!--                singleSettings.style.display = 'none';-->
+<!--            }-->
+<!--        }-->
+
+<!--        function updateNick() {-->
+<!--            const newNick = document.getElementById('nickInput').value;-->
+<!--            fetch('/update-nick?nick=' + encodeURIComponent(newNick))-->
+<!--                .then(() => {-->
+<!--                    alert('Ник изменён, обновите страницу');-->
+<!--                });-->
+<!--        }-->
+<!--    </script>-->
+<!--</head>-->
+<!--<body>-->
+<!--<div class="container">-->
+<!--    <section class="section">-->
+<!--        <h1 class="title">Крестики-Нолики</h1>-->
+<!--        <p>Ваш ник:-->
+<!--            <span th:text="${session.nick}">Guest123</span>-->
+<!--            <input id="nickInput" type="text" placeholder="Изменить ник"-->
+<!--                   style="margin-left:10px;"/>-->
+<!--            <button class="button is-small is-info"-->
+<!--                    style="margin-left:5px;"-->
+<!--                    onclick="updateNick()">OK</button>-->
+<!--        </p>-->
+
+<!--        <br/>-->
+<!--        <form action="/start" method="get">-->
+<!--            <div class="field">-->
+<!--                <label class="label">Режим игры (локально/одиночно):</label>-->
+<!--                <div class="control">-->
+<!--                    <label class="radio">-->
+<!--                        <input type="radio" name="gameMode" value="single"-->
+<!--                               onclick="onGameModeChange('single')" checked>-->
+<!--                        Одиночная-->
+<!--                    </label>-->
+<!--                    <label class="radio">-->
+<!--                        <input type="radio" name="gameMode" value="local"-->
+<!--                               onclick="onGameModeChange('local')">-->
+<!--                        Локальная (2 игрока за одним экраном)-->
+<!--                    </label>-->
+<!--                </div>-->
+<!--            </div>-->
+
+<!--            <div id="singleSettings">-->
+<!--                <div class="field">-->
+<!--                    <label class="label">Символ (X или O):</label>-->
+<!--                    <div class="control">-->
+<!--                        <div class="select">-->
+<!--                            <select name="playerSymbol">-->
+<!--                                <option value="X">X</option>-->
+<!--                                <option value="O">O</option>-->
+<!--                            </select>-->
+<!--                        </div>-->
+<!--                    </div>-->
+<!--                </div>-->
+
+<!--                <div class="field">-->
+<!--                    <label class="label">Сложность (1..4):</label>-->
+<!--                    <div class="control">-->
+<!--                        <div class="select">-->
+<!--                            <select name="difficulty">-->
+<!--                                <option value="1">1</option>-->
+<!--                                <option value="2">2</option>-->
+<!--                                <option value="3">3</option>-->
+<!--                                <option value="4">4</option>-->
+<!--                            </select>-->
+<!--                        </div>-->
+<!--                    </div>-->
+<!--                </div>-->
+<!--            </div>-->
+<!--            <br/>-->
+<!--            <button class="button is-primary">Новая локальная/одиночная игра</button>-->
+<!--        </form>-->
+
+<!--        <br/>-->
+<!--        <a class="button is-link" href="/online">Перейти к сетевой игре</a>-->
+<!--    </section>-->
+<!--</div>-->
+<!--</body>-->
+<!--</html>-->

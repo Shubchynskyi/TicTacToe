@@ -1,67 +1,42 @@
 package com.shubchynskyi.tictactoeapp.model;
 
 
-// Comments in English: This class wraps the Game object for online mode.
-// It has an ID, two players' nicknames, and a single shared Game instance.
 public class OnlineGame {
+
     private long gameId;
-    private Game game;      // shared Tic-Tac-Toe state
-    private String playerX; // nickname of the player using X
-    private String playerO; // nickname of the player using O
+    private Game game; // внутри - поле 3x3
+    private String playerX;
+    private String playerO;
     private boolean waitingForSecondPlayer;
+    private boolean finished;
+    private String winnerNick;
 
     public OnlineGame() {
-        // Default constructor
+        // default for JSON
     }
 
     public OnlineGame(long gameId, String creatorNick) {
         this.gameId = gameId;
-        // We'll create a new Game with mode = "online"
-        // Let's assume the creator is X
-        this.game = new Game("online", "X", null);
+        // Создаём Game c default = single,
+        // но, если хотим "online" - можно поменять:
+        this.game = new Game("online", "X", "easy");
         this.playerX = creatorNick;
-        this.playerO = null; // not joined yet
+        this.playerO = null;
         this.waitingForSecondPlayer = true;
+        this.finished = false;
+        this.winnerNick = null;
     }
 
-    // Getters / Setters
-    public long getGameId() {
-        return gameId;
-    }
-
-    public void setGameId(long gameId) {
-        this.gameId = gameId;
-    }
-
-    public Game getGame() {
-        return game;
-    }
-
-    public void setGame(Game game) {
-        this.game = game;
-    }
-
-    public String getPlayerX() {
-        return playerX;
-    }
-
-    public void setPlayerX(String playerX) {
-        this.playerX = playerX;
-    }
-
-    public String getPlayerO() {
-        return playerO;
-    }
-
-    public void setPlayerO(String playerO) {
-        this.playerO = playerO;
-    }
-
-    public boolean isWaitingForSecondPlayer() {
-        return waitingForSecondPlayer;
-    }
-
-    public void setWaitingForSecondPlayer(boolean waitingForSecondPlayer) {
-        this.waitingForSecondPlayer = waitingForSecondPlayer;
-    }
+    public long getGameId() { return gameId; }
+    public Game getGame() { return game; }
+    public String getPlayerX() { return playerX; }
+    public void setPlayerX(String px) { playerX=px; }
+    public String getPlayerO() { return playerO; }
+    public void setPlayerO(String po) { playerO=po; }
+    public boolean isWaitingForSecondPlayer() { return waitingForSecondPlayer; }
+    public void setWaitingForSecondPlayer(boolean w) { waitingForSecondPlayer=w; }
+    public boolean isFinished() { return finished; }
+    public void setFinished(boolean f) { finished=f; }
+    public String getWinnerNick() { return winnerNick; }
+    public void setWinnerNick(String wn) { winnerNick=wn; }
 }

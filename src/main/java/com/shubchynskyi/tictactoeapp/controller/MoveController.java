@@ -7,6 +7,10 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * Ход локальной игры: GET "/make-move?row=..&col=.."
+ * Возвращает обновлённое Game (JSON)
+ */
 @RestController
 public class MoveController {
 
@@ -18,11 +22,11 @@ public class MoveController {
     ) {
         Game game = (Game) session.getAttribute("localGame");
         if (game == null) {
-            game = new Game("single", "X", null);
+            // создаём новую по умолчанию, single
+            game = new Game("single","X","easy");
             session.setAttribute("localGame", game);
         }
         game.makeMove(row, col);
-        game.makeAiMoveIfNeeded();
         return game;
     }
 }

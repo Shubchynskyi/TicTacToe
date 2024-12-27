@@ -8,23 +8,51 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+
+/**
+ * Создание новой локальной игры по "/start",
+ * затем кладём объект Game в HttpSession (назовём "localGame"),
+ * и рендерим game.html
+ */
 @Controller
 public class GameController {
 
     @GetMapping("/start")
     public String startGame(
             @RequestParam("gameMode") String gameMode,
-            @RequestParam(value = "playerSymbol", required = false) String playerSymbol,
-            @RequestParam(value = "difficulty", required = false) String difficulty,
+            @RequestParam(value="playerSymbol", required=false) String playerSymbol,
+            @RequestParam(value="difficulty", required=false) String difficulty,
             HttpSession session,
             Model model
     ) {
+        // Создаём Game
         Game game = new Game(gameMode, playerSymbol, difficulty);
+        // Храним в сессии
         session.setAttribute("localGame", game);
+
+        // Передаём в модель (можно, чтобы game.html отобразил)
         model.addAttribute("game", game);
-        return "game";
+        return "game"; // game.html
     }
 }
+
+//@Controller
+//public class GameController {
+//
+//    @GetMapping("/start")
+//    public String startGame(
+//            @RequestParam("gameMode") String gameMode,
+//            @RequestParam(value = "playerSymbol", required = false) String playerSymbol,
+//            @RequestParam(value = "difficulty", required = false) String difficulty,
+//            HttpSession session,
+//            Model model
+//    ) {
+//        Game game = new Game(gameMode, playerSymbol, difficulty);
+//        session.setAttribute("localGame", game);
+//        model.addAttribute("game", game);
+//        return "game";
+//    }
+//}
 
 
 //@Controller

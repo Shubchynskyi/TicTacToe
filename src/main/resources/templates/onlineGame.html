@@ -1,11 +1,12 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <title>Online Game (WebSocket)</title>
+    <title>Online Game</title>
     <meta charset="UTF-8"/>
     <link rel="stylesheet"
           href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
 
+    <!-- SockJS + STOMP -->
     <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
 
@@ -15,12 +16,11 @@
         let currentNick = "";
 
         function connect() {
-            // Create SockJS connection
             const socket = new SockJS('/ws');
             stompClient = Stomp.over(socket);
             stompClient.connect({}, function(frame) {
                 console.log('Connected: ' + frame);
-                // Subscribe to this game's topic
+                // subscribe to topic for this game
                 stompClient.subscribe('/topic/online-game-' + gameId, function(message) {
                     const onlineGame = JSON.parse(message.body);
                     updateBoard(onlineGame.game);
@@ -29,91 +29,113 @@
             });
         }
 
-        function sendMove(r, c) {
+        function sendMove(row, col) {
+            // index is 0..8
             const msg = {
                 gameId: gameId,
                 nick: currentNick,
-                row: r,
-                col: c
+                row: row,
+                col: col
             };
             stompClient.send("/app/online-move", {}, JSON.stringify(msg));
         }
 
         function updateBoard(game) {
-            for (let i = 0; i < 3; i++) {
-                for (let j = 0; j < 3; j++) {
-                    const cellId = 'cell' + i + j;
-                    const cell = document.getElementById(cellId);
-                    cell.innerText = game.board[i][j] ? game.board[i][j] : '';
+            const board = game.board; // array of 9
+            for (let i = 0; i < 9; i++) {
+                const cell = document.getElementById('cell' + i);
+                const val = board[i];
+                if (val === 'CROSS') {
+                    cell.innerText = 'X';
+                } else if (val === 'NOUGHT') {
+                    cell.innerText = 'O';
+                } else {
+                    cell.innerText = '';
                 }
             }
         }
 
         function updateStatus(onlineGame) {
-            const g = onlineGame.game;
+            const game = onlineGame.game;
             const statusEl = document.getElementById('status');
-            if (g.gameOver) {
-                if (g.winner === 'DRAW') {
+            if (game.finished) {
+                if (game.winnerNick === 'EMPTY') {
                     statusEl.innerText = 'Ничья!';
-                } else {
-                    statusEl.innerText = 'Победитель: ' + g.winner;
+                } else if (game.winner === 'CROSS') {
+                    statusEl.innerText = 'Победил: ' + onlineGame.playerX;
+                    // or check if cross=playerX or playerO
+                } else if (game.winner === 'NOUGHT') {
+                    statusEl.innerText = 'Победил: ' + onlineGame.winnerNick;
                 }
             } else {
-                statusEl.innerText = 'Ход: ' + g.currentPlayer;
+                statusEl.innerText = 'Ход: ' + game.currentPlayer;
             }
-            // Update playerX / playerO on screen
+
+            // update X/O names
             document.getElementById('playerX').innerText = onlineGame.playerX;
             document.getElementById('playerO').innerText = onlineGame.playerO ? onlineGame.playerO : '---';
         }
 
         window.addEventListener('load', () => {
-            const urlParams = new URLSearchParams(window.location.search);
-            gameId = urlParams.get('gameId');
+            // parse gameId from URL (e.g. ?gameId=123)
+            const params = new URLSearchParams(window.location.search);
+            gameId = params.get('gameId');
             document.getElementById('gid').innerText = gameId;
 
+            // get nick from thymeleaf or session
             currentNick = document.getElementById('nick').innerText;
+
             connect();
         });
+
+        function leaveCurrentGame() {
+            const msg = { gameId: gameId, nick: currentNick };
+            stompClient.send("/app/leave-game", {}, JSON.stringify(msg));
+            // возможно, закрываем вкладку, или
+            window.location.href = "/online";
+        }
     </script>
 </head>
 <body>
 <div class="container">
     <section class="section">
-        <h1 class="title">Онлайн-игра (WebSocket). Партия #<span id="gid"></span></h1>
+        <h1 class="title">Онлайн-игра #<span id="gid"></span></h1>
         <p>Ваш ник: <span id="nick" th:text="${nick}">Guest</span></p>
-        <p>Игрок X: <span id="playerX" th:text="${onlineGame.playerX}">?</span></p>
-        <p>Игрок O: <span id="playerO" th:text="${onlineGame.playerO}">?</span></p>
-        <p id="status" style="font-weight: bold; margin-top:10px;">Ожидание данных...</p>
+        <p>Игрок X: <span id="playerX" th:text="${onlineGame.playerX}">X</span></p>
+        <p>Игрок O: <span id="playerO" th:text="${onlineGame.playerO}">O</span></p>
+        <p id="status" style="font-weight: bold;">...</p>
 
-        <!-- 3x3 field -->
-        <div style="margin-top:20px;">
-            <div style="display:flex;">
-                <div id="cell00" class="box" style="width:60px;height:60px;margin:2px;text-align:center;cursor:pointer;font-size:24px;"
+        <div style="margin-top: 20px;">
+            <div style="display: flex;">
+                <div id="cell0" class="box" style="width:60px;height:60px;margin:2px;text-align:center;font-size:24px;cursor:pointer;"
                      onclick="sendMove(0,0)"></div>
-                <div id="cell01" class="box" style="width:60px;height:60px;margin:2px;text-align:center;cursor:pointer;font-size:24px;"
+                <div id="cell1" class="box" style="width:60px;height:60px;margin:2px;text-align:center;font-size:24px;cursor:pointer;"
                      onclick="sendMove(0,1)"></div>
-                <div id="cell02" class="box" style="width:60px;height:60px;margin:2px;text-align:center;cursor:pointer;font-size:24px;"
+                <div id="cell2" class="box" style="width:60px;height:60px;margin:2px;text-align:center;font-size:24px;cursor:pointer;"
                      onclick="sendMove(0,2)"></div>
             </div>
-            <div style="display:flex;">
-                <div id="cell10" class="box" style="width:60px;height:60px;margin:2px;text-align:center;cursor:pointer;font-size:24px;"
+            <div style="display: flex;">
+                <div id="cell3" class="box" style="width:60px;height:60px;margin:2px;text-align:center;font-size:24px;cursor:pointer;"
                      onclick="sendMove(1,0)"></div>
-                <div id="cell11" class="box" style="width:60px;height:60px;margin:2px;text-align:center;cursor:pointer;font-size:24px;"
+                <div id="cell4" class="box" style="width:60px;height:60px;margin:2px;text-align:center;font-size:24px;cursor:pointer;"
                      onclick="sendMove(1,1)"></div>
-                <div id="cell12" class="box" style="width:60px;height:60px;margin:2px;text-align:center;cursor:pointer;font-size:24px;"
+                <div id="cell5" class="box" style="width:60px;height:60px;margin:2px;text-align:center;font-size:24px;cursor:pointer;"
                      onclick="sendMove(1,2)"></div>
             </div>
-            <div style="display:flex;">
-                <div id="cell20" class="box" style="width:60px;height:60px;margin:2px;text-align:center;cursor:pointer;font-size:24px;"
+            <div style="display: flex;">
+                <div id="cell6" class="box" style="width:60px;height:60px;margin:2px;text-align:center;font-size:24px;cursor:pointer;"
                      onclick="sendMove(2,0)"></div>
-                <div id="cell21" class="box" style="width:60px;height:60px;margin:2px;text-align:center;cursor:pointer;font-size:24px;"
+                <div id="cell7" class="box" style="width:60px;height:60px;margin:2px;text-align:center;font-size:24px;cursor:pointer;"
                      onclick="sendMove(2,1)"></div>
-                <div id="cell22" class="box" style="width:60px;height:60px;margin:2px;text-align:center;cursor:pointer;font-size:24px;"
+                <div id="cell8" class="box" style="width:60px;height:60px;margin:2px;text-align:center;font-size:24px;cursor:pointer;"
                      onclick="sendMove(2,2)"></div>
             </div>
         </div>
         <br/>
-        <a class="button" href="/online">Вернуться к списку</a>
+        <button class="button" onclick="leaveCurrentGame()">Покинуть игру</button>
+
+        <br/>
+        <a class="button" href="/online">Покинуть игру</a>
     </section>
 </div>
 </body>
