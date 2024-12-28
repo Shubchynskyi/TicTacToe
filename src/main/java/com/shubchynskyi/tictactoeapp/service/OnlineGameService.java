@@ -7,6 +7,7 @@ import com.shubchynskyi.tictactoeapp.model.OnlineGame;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
@@ -35,12 +36,26 @@ public class OnlineGameService {
     public OnlineGame joinGame(long gameId, String nick) {
         OnlineGame og = games.get(gameId);
         if (og != null && og.isWaitingForSecondPlayer()) {
-            if (!og.getPlayerX().equals(nick)) {
-                og.setPlayerO(nick);
-                og.setWaitingForSecondPlayer(false);
-            } else {
-                return null; // same nick as X
+
+            // <--- CHANGE: проверяем, playerX != null, чтоб избежать NPE
+            if (og.getPlayerX() != null && og.getPlayerX().equals(nick)) {
+                // тот же ник как X
+                return null;
             }
+            if (og.getPlayerO() != null && og.getPlayerO().equals(nick)) {
+                // тот же ник как O
+                return null;
+            }
+
+            // Если creatorNick оказался O => playerX=null
+            // тогда сетим X = joinerNick
+            if (og.getPlayerX() == null) {
+                og.setPlayerX(nick);
+            } else if (og.getPlayerO() == null) {
+                og.setPlayerO(nick);
+            }
+
+            og.setWaitingForSecondPlayer(false);
         }
         return og;
     }
@@ -48,23 +63,30 @@ public class OnlineGameService {
     public OnlineGame makeMove(long gameId, String nick, int row, int col) {
         OnlineGame og = games.get(gameId);
         if (og==null || og.isFinished()) return null;
-        Game g = og.getGame();
 
+        Game g = og.getGame();
         if (!g.isGameOver()) {
-            String cur = g.getCurrentPlayer(); // "X" or "O"
-            if ("X".equals(cur) && nick.equals(og.getPlayerX())) {
+            String cur = g.getCurrentPlayer();
+            // "X" => og.getPlayerX(), "O" => og.getPlayerO()
+            if ("X".equals(cur) && og.getPlayerX()!=null && og.getPlayerX().equals(nick)) {
                 g.makeMove(row, col);
-            } else if ("O".equals(cur) && nick.equals(og.getPlayerO())) {
+            } else if ("O".equals(cur) && og.getPlayerO()!=null && og.getPlayerO().equals(nick)) {
                 g.makeMove(row, col);
             }
+
             if (g.isGameOver()) {
                 og.setFinished(true);
-                if ("DRAW".equals(g.getWinner())) {
+                String w = g.getWinner();
+                if ("DRAW".equals(w)) {
                     og.setWinnerNick("DRAW");
-                } else if ("X".equals(g.getWinner())) {
+                } else if ("X".equals(w)) {
                     og.setWinnerNick(og.getPlayerX());
-                } else if ("O".equals(g.getWinner())) {
+                    // <--- ADD score for X
+                    og.setScoreX(og.getScoreX()+1);
+                } else if ("O".equals(w)) {
                     og.setWinnerNick(og.getPlayerO());
+                    // <--- ADD score for O
+                    og.setScoreO(og.getScoreO()+1);
                 }
             }
         }
@@ -73,10 +95,10 @@ public class OnlineGameService {
 
     public void leaveGame(long gameId, String nick) {
         OnlineGame og = games.get(gameId);
-        if (og!=null) {
-            if (nick.equals(og.getPlayerX())) {
+        if(og!=null) {
+            if(og.getPlayerX()!=null && og.getPlayerX().equals(nick)){
                 og.setPlayerX(null);
-            } else if (nick.equals(og.getPlayerO())) {
+            } else if(og.getPlayerO()!=null && og.getPlayerO().equals(nick)){
                 og.setPlayerO(null);
             }
             if (og.getPlayerX()==null && og.getPlayerO()==null) {
@@ -90,5 +112,43 @@ public class OnlineGameService {
         if (og!=null) {
             og.setFinished(true);
         }
+    }
+
+    // <--- ADD: rematchGame, меняем X/O заново
+    public OnlineGame rematchGame(long gameId) {
+        OnlineGame og = games.get(gameId);
+        if (og==null) return null;
+        if (!og.isFinished()) return og; // игра не закончена
+
+        // очищаем поле, winnerNick, finished
+        og.setFinished(false);
+        og.setWinnerNick(null);
+        Game g;
+
+        // Счёт уже увеличен при makeMove
+
+        // Заново "случайно" - уберём X/O,
+        // и в конструкторе Game(...) переинициируем
+        // Но проще: пересоздадим Game
+
+
+        boolean randomX = (Math.random()<0.5);
+        if (randomX) {
+            g = new Game("online","X","easy");
+        } else {
+            g = new Game("online","O","easy");
+            String playerX = og.getPlayerX();
+            og.setPlayerX(og.getPlayerO());
+            og.setPlayerO(playerX);
+            int scoreX = og.getScoreX();
+            og.setScoreX(og.getScoreO());
+            og.setScoreO(scoreX);
+        }
+        og.setWaitingForSecondPlayer( (og.getPlayerX()==null || og.getPlayerO()==null) );
+        og.setFinished(false);
+        og.setWinnerNick(null);
+
+        og.setGame(g);
+        return og;
     }
 }

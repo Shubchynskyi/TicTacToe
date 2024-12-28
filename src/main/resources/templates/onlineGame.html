@@ -55,25 +55,40 @@
             }
         }
 
+        // ADD: rematch
+        function rematch() {
+            // const msg = { gameId: gameId, nick: currentNick }; todo old, with nick
+            const msg = { gameId: gameId };
+            stompClient.send("/app/rematch", {}, JSON.stringify(msg));
+        }
+
         function updateStatus(onlineGame) {
             const game = onlineGame.game;
             const statusEl = document.getElementById('status');
-            if (game.finished) {
-                if (game.winnerNick === 'EMPTY') {
+
+            // ADD: score
+            document.getElementById('scoreX').innerText = onlineGame.scoreX;
+            document.getElementById('scoreO').innerText = onlineGame.scoreO;
+
+            if (onlineGame.finished) {
+                // игра закончилась
+                if (game.winner === 'DRAW') {
                     statusEl.innerText = 'Ничья!';
-                } else if (game.winner === 'CROSS') {
-                    statusEl.innerText = 'Победил: ' + onlineGame.playerX;
-                    // or check if cross=playerX or playerO
-                } else if (game.winner === 'NOUGHT') {
-                    statusEl.innerText = 'Победил: ' + onlineGame.winnerNick;
+                } else if (game.winner === 'X') {
+                    statusEl.innerText = 'Победил: ' + (onlineGame.playerX ?? 'X');
+                } else if (game.winner === 'O') {
+                    statusEl.innerText = 'Победил: ' + (onlineGame.playerO ?? 'O');
                 }
+                // показать кнопку "Rematch!"
+                document.getElementById('rematchBtn').style.display = 'inline-block';
             } else {
-                statusEl.innerText = 'Ход: ' + game.currentPlayer;
+                // игра не закончена
+                document.getElementById('rematchBtn').style.display='none';
+                statusEl.innerText = 'Ход: ' + game.currentPlayer; // "X" or "O"
             }
 
-            // update X/O names
-            document.getElementById('playerX').innerText = onlineGame.playerX;
-            document.getElementById('playerO').innerText = onlineGame.playerO ? onlineGame.playerO : '---';
+            document.getElementById('playerX').innerText = onlineGame.playerX ?? '---';
+            document.getElementById('playerO').innerText = onlineGame.playerO ?? '---';
         }
 
         window.addEventListener('load', () => {
@@ -101,8 +116,12 @@
     <section class="section">
         <h1 class="title">Онлайн-игра #<span id="gid"></span></h1>
         <p>Ваш ник: <span id="nick" th:text="${nick}">Guest</span></p>
-        <p>Игрок X: <span id="playerX" th:text="${onlineGame.playerX}">X</span></p>
-        <p>Игрок O: <span id="playerO" th:text="${onlineGame.playerO}">O</span></p>
+
+        <p>Игрок X: <span id="playerX" th:text="${onlineGame.playerX}">X</span>(<span id="scoreX">0</span>)</p>
+        <p>Игрок O: <span id="playerO" th:text="${onlineGame.playerO}">O</span>(<span id="scoreO">0</span>)</p>
+
+<!--        < -->
+
         <p id="status" style="font-weight: bold;">...</p>
 
         <div style="margin-top: 20px;">
@@ -132,10 +151,13 @@
             </div>
         </div>
         <br/>
-        <button class="button" onclick="leaveCurrentGame()">Покинуть игру</button>
-
+        <button id="rematchBtn" class="button is-warning" style="display:none;" onclick="rematch()">Реванш</button>
         <br/>
-        <a class="button" href="/online">Покинуть игру</a>
+        <br/>
+        <button class="button" onclick="leaveCurrentGame()">Покинуть игру</button>
+        <br/>
+        <br/>
+        <a class="button" href="/online">Вернуться к списку</a>
     </section>
 </div>
 </body>

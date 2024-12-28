@@ -12,12 +12,12 @@ import java.util.Arrays;
  */
 public class Game {
 
-    private Sign[] board; // 9 клеток
-    private String gameMode; // "single" или "local"
-    private Sign playerSign; // Если single, это символ игрока (X/O)
+    private Sign[] board;      // 9 клеток: 0..8
+    private String gameMode;   // "single" или "local"
+    private Sign playerSign;   // Если single, это символ игрока (X/O)
     private String difficulty; // "easy"/"medium"/"hard"/"impossible"
 
-    private Sign currentPlayer; // CROSS(X) или NOUGHT(O)
+    private Sign currentPlayer;
     private boolean gameOver;
     private String winner; // "X","O","DRAW"
 
@@ -40,28 +40,29 @@ public class Game {
         this.board = new Sign[9];
         Arrays.fill(this.board, Sign.EMPTY);
 
+        // "single" или "local"
         this.gameMode = (gameMode == null) ? "single" : gameMode;
 
+        // X или O
         if (playerSymbol == null || playerSymbol.equalsIgnoreCase("X")) {
             this.playerSign = Sign.CROSS;
         } else {
             this.playerSign = Sign.NOUGHT;
         }
 
+        // easy/medium/hard/impossible
         this.difficulty = (difficulty == null) ? "easy" : difficulty;
 
-        this.currentPlayer = Sign.CROSS; // X ходит первым
+        this.currentPlayer = Sign.CROSS;
         this.gameOver = false;
         this.winner = null;
 
-        initStrategy(); //TODO ?
+        initStrategy();
     }
 
     private void initStrategy() {
-        switch (this.difficulty.toLowerCase()) {
-            case "easy":
-                this.strategy = new EasyDifficultyStrategy();
-                break;
+        String d = this.difficulty.toLowerCase();
+        switch (d) {
             case "medium":
                 this.strategy = new MediumDifficultyStrategy();
                 break;
@@ -71,12 +72,12 @@ public class Game {
             case "impossible":
                 this.strategy = new GodDifficultyStrategy();
                 break;
+            case "easy":
             default:
                 this.strategy = new EasyDifficultyStrategy();
         }
     }
 
-    // Ход игрока (row,col)
     public void makeMove(int row, int col) {
         if (gameOver) return;
         int idx = row*3 + col;
@@ -100,8 +101,7 @@ public class Game {
         // AI = противоположный playerSign
         Sign aiSign = (playerSign==Sign.CROSS)? Sign.NOUGHT : Sign.CROSS;
         if (currentPlayer == aiSign) {
-            // вызываем стратегию
-            strategy.makeMove(this);
+            strategy.makeMove(this); // AI move
             checkWinOrDraw();
             if (!gameOver) {
                 switchPlayer();
@@ -109,23 +109,28 @@ public class Game {
         }
     }
 
-    // Проверка победы/ничьи
+    private void switchPlayer() {
+        if (currentPlayer==Sign.CROSS) currentPlayer=Sign.NOUGHT;
+        else currentPlayer=Sign.CROSS;
+    }
+
     private void checkWinOrDraw() {
-        Sign s = checkWinSign();
-        if (s != Sign.EMPTY) {
+        Sign wSign = checkWinSign();
+        if (wSign != Sign.EMPTY) {
             gameOver = true;
-            winner = (s==Sign.CROSS) ? "X" : "O";
+            if (wSign==Sign.CROSS) winner = "X";
+            else winner = "O";
         } else {
+            // check if board is full
             boolean allFilled = true;
-            for (Sign sign: board) {
-                if (sign==Sign.EMPTY) {
-                    allFilled = false;
-                    break;
+            for (Sign s : board) {
+                if (s==Sign.EMPTY) {
+                    allFilled=false; break;
                 }
             }
             if (allFilled) {
-                gameOver = true;
-                winner = "DRAW";
+                gameOver=true;
+                winner="DRAW";
             }
         }
     }
@@ -146,92 +151,64 @@ public class Game {
         return Sign.EMPTY;
     }
 
-    private void switchPlayer() {
-        if (currentPlayer==Sign.CROSS) currentPlayer = Sign.NOUGHT;
-        else currentPlayer = Sign.CROSS;
-    }
+    // Геттеры
 
-    // Геттеры/сеттеры
+    public Sign[] getBoard() { return board; }
 
-    public Sign[] getBoard() {
-        return board;
-    }
-
-    // Удобный метод: вернуть 'X' или 'O'
+    // Возвращаем "X" или "O"
     public String getCurrentPlayer() {
         if (currentPlayer==Sign.CROSS) return "X";
         if (currentPlayer==Sign.NOUGHT) return "O";
         return "";
     }
 
-    public boolean isGameOver() {
-        return gameOver;
-    }
-
-    public String getWinner() {
-        return winner;
-    }
-
-    public String getGameMode() {
-        return gameMode;
-    }
-
-    public String getDifficulty() {
-        return difficulty;
-    }
-
-    public Sign getPlayerSign() {
-        return playerSign;
-    }
+    public boolean isGameOver() { return gameOver; }
+    public String getWinner() { return winner; }
+    public String getGameMode() { return gameMode; }
+    public String getDifficulty() { return difficulty; }
 
     // для отладки
-    public void setBoard(Sign[] board) {
-        this.board = board;
-    }
+    public Sign getPlayerSign() { return playerSign; }
 
+    // AI-стратегия может напрямую делать ход:
     public void doMove(int idx) {
-        // Упрощённый метод, AI напрямую вызывает "doMove(cellIndex)"
-        if (gameOver) return;
-        if (board[idx] == Sign.EMPTY) {
+        if (!gameOver && board[idx]==Sign.EMPTY) {
             board[idx] = currentPlayer;
             checkWinOrDraw();
-//            if (!gameOver) {
-//                switchPlayer();
-//            }
+            // switchPlayer() - некоторые стратегии сами хотят
+            // или мы делаем как в makeAiMoveIfNeeded
         }
     }
 
-    public Sign getSignAt(int index) {
-        return board[index];
+    public Sign getSignAt(int i) {
+        return board[i];
     }
-
-    public void setSignAt(int index, Sign sign) {
-        board[index] = sign;
-    }
-
-    public Sign getAiSign() {
-        if(playerSign == Sign.CROSS) {
-            return Sign.NOUGHT;
-        } else return Sign.CROSS;
+    public void setSignAt(int i, Sign sign) {
+        board[i]=sign;
     }
 
     public boolean isWin(Sign sign) {
-        return checkWinner() == sign;
+        return (checkWinSign()==sign);
+    }
+    public Sign getCurrentPlayerSign() {
+        return currentPlayer;
+    }
+    public Sign getAiSign() {
+        // если человек=playerSign=X => AI=O
+        return (playerSign==Sign.CROSS)? Sign.NOUGHT: Sign.CROSS;
     }
 
-    private Sign checkWinner() {
-        int[][] combos = {
-                {0,1,2},{3,4,5},{6,7,8},
-                {0,3,6},{1,4,7},{2,5,8},
-                {0,4,8},{2,4,6}
-        };
-        for (int[] c: combos) {
-            if (board[c[0]] != Sign.EMPTY &&
-                    board[c[0]] == board[c[1]] &&
-                    board[c[1]] == board[c[2]]) {
-                return board[c[0]];
-            }
-        }
-        return Sign.EMPTY;
+    public void setBoard(Sign[] newBoard) {
+        this.board = newBoard;
+    }
+    public void setGameOver(boolean go) {
+        this.gameOver = go;
+    }
+    public void setWinner(String w) {
+        this.winner = w;
+    }
+    // <--- ADD
+    public void setCurrentPlayerSign(Sign s) {
+        this.currentPlayer = s;
     }
 }

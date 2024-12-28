@@ -5,6 +5,52 @@
     <meta charset="UTF-8"/>
     <link rel="stylesheet"
           href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+    <!-- ADD script for SockJS + STOMP -->
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+
+    <script>
+        let stompList = null;
+        function connectList() {
+            const socket = new SockJS('/ws');
+            stompList = Stomp.over(socket);
+            stompList.connect({}, function(frame){
+                console.log('Connected to /ws for game-list: ' + frame);
+                stompList.subscribe('/topic/game-list', function(msg){
+                    const updatedGames = JSON.parse(msg.body);
+                    renderGameList(updatedGames);
+                });
+            });
+        }
+
+        function renderGameList(games) {
+            // У вас уже есть <tbody> со списком,
+            // мы можем перерисовать таблицу через innerHTML
+            const tbody = document.getElementById('gamesBody');
+            let html = '';
+            games.forEach(g => {
+                const status = g.waitingForSecondPlayer ? 'Ожидает второго' : 'Игра идёт';
+                html += `
+          <tr>
+            <td>${g.gameId}</td>
+            <td>${g.playerX ?? ''}</td>
+            <td>${g.playerO ?? ''}</td>
+            <td>${status}</td>
+            <td>
+              ${
+                    g.waitingForSecondPlayer
+                        ? `<a class="button is-small is-info" href="/join-online?gameId=${g.gameId}">Присоединиться</a>`
+                        : `<a class="button is-small is-link" href="/onlineGame?gameId=${g.gameId}">Перейти</a>`
+                }
+            </td>
+          </tr>
+        `;
+            });
+            tbody.innerHTML = html;
+        }
+
+        window.addEventListener('load', connectList);
+    </script>
 </head>
 <body>
 <div class="container">
@@ -26,7 +72,10 @@
                 <th>Действие</th>
             </tr>
             </thead>
-            <tbody>
+            <tbody id="gamesBody">
+            <!-- Здесь Thymeleaf сотрёт при генерации,
+                 но мы можем оставить th:each для начального списка
+                 ИЛИ вообще убираем th:each, рендерим целиком JS -->
             <tr th:each="g : ${games}">
                 <td th:text="${g.gameId}">?</td>
                 <td th:text="${g.playerX}">?</td>

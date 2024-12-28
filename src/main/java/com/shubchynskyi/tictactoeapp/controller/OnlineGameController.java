@@ -47,7 +47,7 @@ public class OnlineGameController {
             nick = "Guest" + (System.currentTimeMillis() % 1000);
             session.setAttribute("nick", nick);
         }
-        long gameId = service.createGame(nick);
+        long gameId = service.createGame(nick); //TODO
         // we can broadcast new game list
         broadcastGameList();
         return "redirect:/online";
@@ -84,6 +84,7 @@ public class OnlineGameController {
 
     // ============ WebSocket Endpoints ============
 
+    // WebSocket ход
     @MessageMapping("/online-move")
     public void handleOnlineMove(OnlineGameMessage msg) {
         service.makeMove(msg.getGameId(), msg.getNick(), msg.getRow(), msg.getCol());
@@ -91,8 +92,15 @@ public class OnlineGameController {
         messagingTemplate.convertAndSend("/topic/online-game-" + msg.getGameId(), og);
     }
 
-    // no "leave-game" here, let's do it in this same controller or we can do it here:
+    @MessageMapping("/rematch")
+    public void handleRematch(RematchMessage msg) {
+        OnlineGame og = service.rematchGame(msg.getGameId());
+        if (og!=null) {
+            messagingTemplate.convertAndSend("/topic/online-game-" + msg.getGameId(), og);
+        }
+    }
 
+    // WebSocket "leave-game"
     @MessageMapping("/leave-game")
     public void handleLeaveGame(LeaveGameMessage msg) {
         service.leaveGame(msg.getGameId(), msg.getNick());
@@ -104,8 +112,7 @@ public class OnlineGameController {
         }
     }
 
-    // or we can do it in the same class
-    public void broadcastGameList() {
+    public void broadcastGameList() { //todo private?
         List<OnlineGame> allGames = service.listGames();
         messagingTemplate.convertAndSend("/topic/game-list", allGames);
     }
