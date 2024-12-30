@@ -93,19 +93,75 @@ public class OnlineGameService {
         return og;
     }
 
-    public void leaveGame(long gameId, String nick) {
+    public boolean leaveGame(long gameId, String nick) {
         OnlineGame og = games.get(gameId);
-        if(og!=null) {
-            if(og.getPlayerX()!=null && og.getPlayerX().equals(nick)){
-                og.setPlayerX(null);
-            } else if(og.getPlayerO()!=null && og.getPlayerO().equals(nick)){
-                og.setPlayerO(null);
+        if (og != null) {
+            if (og.getCreatorNick() != null && og.getCreatorNick().equals(nick)) {
+                // creator left => remove game
+                games.remove(gameId);
+                return true; // room closed
             }
+            boolean wasPlayerX = (og.getPlayerX()!=null && og.getPlayerX().equals(nick));
+            boolean wasPlayerO = (og.getPlayerO()!=null && og.getPlayerO().equals(nick));
+
+            if (wasPlayerX) og.setPlayerX(null);
+            else if (wasPlayerO) og.setPlayerO(null);
+
             if (og.getPlayerX()==null && og.getPlayerO()==null) {
                 games.remove(gameId);
+                return true; // both left => room closed
             }
+            // else, second leaves => reset scoreboard, etc.
+            og.setScoreX(0);
+            og.setScoreO(0);
+            og.setFinished(false);
+            og.setWinnerNick(null);
+            og.setWaitingForSecondPlayer(true);
+
+            return false; // room not closed, but one slot is free
         }
+        return false;
     }
+
+//    public void leaveGame(long gameId, String nick) {
+//        OnlineGame og = games.get(gameId);
+//        if (og != null) {
+//            // <--- 2.1. Если создатель уходит, закрываем комнату
+//            if (og.getCreatorNick()!=null && og.getCreatorNick().equals(nick)) {
+//                // Удаляем игру
+//                games.remove(gameId);
+//                return;
+//            }
+//
+//            // <--- 2.2. Если уходит второй игрок - надо обнулить счёт,
+//            // освободить слот O (или X), чтоб можно было снова присоединиться
+//            boolean wasPlayerX = (og.getPlayerX()!=null && og.getPlayerX().equals(nick));
+//            boolean wasPlayerO = (og.getPlayerO()!=null && og.getPlayerO().equals(nick));
+//
+//            if (wasPlayerX) {
+//                og.setPlayerX(null);
+//            } else if (wasPlayerO) {
+//                og.setPlayerO(null);
+//            }
+//
+//            // Если ушёл «второй», а первый (создатель) остаётся => сбросить счёт
+//            // finished=false, waitingForSecondPlayer=true
+//            if ((wasPlayerX || wasPlayerO)
+//                    && (og.getPlayerX()!=null || og.getPlayerO()!=null) ) {
+//                // room not empty => one is still inside
+//                og.setScoreX(0);
+//                og.setScoreO(0);
+//                og.setFinished(false);
+//                og.setWinnerNick(null);
+//                og.setWaitingForSecondPlayer(true);
+//            }
+//
+//            // Если после выхода в комнате никого не осталось
+//            if (og.getPlayerX()==null && og.getPlayerO()==null) {
+//                games.remove(gameId);
+//            }
+//        }
+//    }
 
     public void finishGame(long gameId) {
         OnlineGame og = games.get(gameId);
@@ -126,11 +182,6 @@ public class OnlineGameService {
         Game g;
 
         // Счёт уже увеличен при makeMove
-
-        // Заново "случайно" - уберём X/O,
-        // и в конструкторе Game(...) переинициируем
-        // Но проще: пересоздадим Game
-
 
         boolean randomX = (Math.random()<0.5);
         if (randomX) {

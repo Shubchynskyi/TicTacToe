@@ -13,6 +13,7 @@ public class OnlineGame {
 
     private int scoreX; // сколько побед у X
     private int scoreO; // сколько побед у O
+    private String creatorNick;
 
     public OnlineGame() {
         // default
@@ -20,27 +21,21 @@ public class OnlineGame {
 
     public OnlineGame(long gameId, String creatorNick) {
         this.gameId = gameId;
-        // <--- ADD: случайно решаем, будет ли creatorNick = X или O
+        this.creatorNick = creatorNick; // <--- ADD
+
         boolean creatorIsX = (Math.random() < 0.5);
         if (creatorIsX) {
-            // creatorNick = X
             this.game = new Game("online", "X", "easy");
             this.playerX = creatorNick;
             this.playerO = null;
         } else {
-            // creatorNick = O
             this.game = new Game("online", "O", "easy");
             this.playerX = null;
             this.playerO = creatorNick;
         }
-        // <--- /ADD
-
-
         this.waitingForSecondPlayer = true;
         this.finished = false;
         this.winnerNick = null;
-
-        // <--- ADD for score
         this.scoreX = 0;
         this.scoreO = 0;
     }
@@ -67,4 +62,9 @@ public class OnlineGame {
     public void setGame(Game g) {
         this.game = g;
     }
+
+    public String getCreatorNick() {
+        return creatorNick;
+    }
+    public void setCreatorNick(String c) { this.creatorNick=c; }
 }

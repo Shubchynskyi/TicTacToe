@@ -20,12 +20,35 @@
             stompClient = Stomp.over(socket);
             stompClient.connect({}, function(frame) {
                 console.log('Connected: ' + frame);
-                // subscribe to topic for this game
+
+                // Подписываемся
                 stompClient.subscribe('/topic/online-game-' + gameId, function(message) {
+                    if (!message.body) {
+                        return;
+                    }
+
+                    if (message.body === '"CLOSED"') {
+                        // это значит, что пришёл JSON со строкой CLOSED (внутри ещё двойные кавычки)
+                        // Или можно сделать if (message.body.replace(/"/g,"") === "CLOSED") ...
+                        alert("Игровая сессия была закрыта! Возврат...");
+                        setTimeout(()=> { window.location.href="/online" }, 5000);
+                        return;
+                    }
+
                     const onlineGame = JSON.parse(message.body);
                     updateBoard(onlineGame.game);
                     updateStatus(onlineGame);
                 });
+
+                // <--- ADD: сразу после connect() запросим актуальное состояние
+                fetch('/online-state?gameId=' + gameId)
+                    .then(resp => resp.json())
+                    .then(og => {
+                        updateBoard(og.game);
+                        updateStatus(og);
+                    })
+                    .catch(e => console.error('Cannot fetch online-state', e));
+                // <--- /ADD
             });
         }
 

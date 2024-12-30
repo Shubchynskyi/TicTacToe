@@ -84,6 +84,14 @@
                     <span th:if="${g.waitingForSecondPlayer}">Ожидает второго</span>
                     <span th:if="${!g.waitingForSecondPlayer}">Игра идёт</span>
                 </td>
+<!--                <td>-->
+<!--                    <a class="button is-small is-info"-->
+<!--                       th:href="@{/join-online(gameId=${g.gameId})}"-->
+<!--                       th:if="${g.waitingForSecondPlayer}">-->
+<!--                        Присоединиться-->
+<!--                    </a>-->
+<!--                    <span th:if="${!g.waitingForSecondPlayer}">Идёт игра</span>-->
+<!--                </td>-->
                 <td>
                     <a class="button is-small is-info"
                        th:href="@{/join-online(gameId=${g.gameId})}"
@@ -93,7 +101,7 @@
                     <a class="button is-small is-link"
                        th:href="@{/onlineGame(gameId=${g.gameId})}"
                        th:if="${!g.waitingForSecondPlayer}">
-                        Перейти
+                        Идёт игра
                     </a>
                 </td>
             </tr>
