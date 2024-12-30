@@ -29,5 +29,16 @@ public class MoveController {
         game.makeMove(row, col);
         return game;
     }
+
+    @GetMapping("/restart-local")
+    public Game restartLocal(HttpSession session) {
+        Game g = (Game) session.getAttribute("localGame");
+        if (g != null) {
+            // сбрасываем board, winner, currentPlayer
+            g.resetBoard(); // новый метод
+        }
+        return g;
+    }
+
 }
 

@@ -36,7 +36,10 @@
 
         function updateStatus(game) {
             const st = document.getElementById('status');
+            document.getElementById('scoreHuman').innerText = game.scoreHuman;
+            document.getElementById('scoreAI').innerText = game.scoreAI;
             if (game.gameOver) {
+                document.getElementById('restartBtn').innerText="Заново";
                 if (game.winner==='DRAW') {
                     st.innerText='Ничья!';
                 } else {
@@ -44,10 +47,22 @@
                 }
             } else {
                 st.innerText='Ход: '+game.currentPlayer;
+                document.getElementById('restartBtn').innerText="Рестарт";
             }
         }
 
         window.addEventListener('load', () => { refreshGameState(); });
+
+
+        async function restartLocal() {
+            const resp = await fetch('/restart-local');
+            if (resp.ok) {
+                const game = await resp.json();
+                updateBoard(game);
+                updateStatus(game);
+            }
+        }
+
     </script>
 </head>
 <body>
@@ -55,6 +70,9 @@
     <section class="section">
         <h1 class="title">Локальная/Одиночная Игра</h1>
         <p id="status" style="font-weight:bold;">...</p>
+
+        <p>Ваши победы: <span id="scoreHuman">0</span></p>
+        <p>Победы AI: <span id="scoreAI">0</span></p>
 
         <div style="margin-top:20px;">
             <div style="display:flex;">
@@ -84,6 +102,11 @@
         </div>
 
         <br/>
+
+        <button class="button"
+                id="restartBtn"
+                onclick="restartLocal() ">Рестарт</button>
+
         <a class="button" href="/">Вернуться на главную</a>
     </section>
 </div>

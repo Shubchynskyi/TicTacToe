@@ -28,10 +28,7 @@
                     }
 
                     if (message.body === '"CLOSED"') {
-                        // это значит, что пришёл JSON со строкой CLOSED (внутри ещё двойные кавычки)
-                        // Или можно сделать if (message.body.replace(/"/g,"") === "CLOSED") ...
-                        alert("Игровая сессия была закрыта! Возврат...");
-                        setTimeout(()=> { window.location.href="/online" }, 5000);
+                        showSessionClosedModal(); // показываем модалку
                         return;
                     }
 
@@ -132,6 +129,48 @@
             // возможно, закрываем вкладку, или
             window.location.href = "/online";
         }
+
+        function askBeforeLeave() {
+            if (confirm("Вы уверены, что хотите выйти?")) {
+                leaveCurrentGame();
+            }
+        }
+
+        // modal windows for second player
+        function showSessionClosedModal() {
+            const m = document.getElementById('sessionClosedModal');
+            m.style.display='block';
+            // запуск таймера 5s
+            let sec = 5;
+            const timerSpan = document.getElementById('closeTimer');
+            const interval = setInterval(()=>{
+                sec--;
+                timerSpan.innerText=sec;
+                if(sec<=0) {
+                    clearInterval(interval);
+                    window.location.href="/online";
+                }
+            }, 1000);
+        }
+        function goToList() {
+            window.location.href="/online";
+        }
+
+        // для модальных окон выхода
+        function showCreatorLeaveModal() {
+            document.getElementById('creatorLeaveModal').style.display = 'block';
+        }
+        function confirmCreatorLeave() {
+            // нажали «Выйти» => вызываем leaveCurrentGame()
+            document.getElementById('creatorLeaveModal').style.display='none';
+            leaveCurrentGame();
+        }
+
+        function cancelCreatorLeave() {
+            // нажали «Отменить» => закрываем окно
+            document.getElementById('creatorLeaveModal').style.display='none';
+        }
+
     </script>
 </head>
 <body>
@@ -177,11 +216,37 @@
         <button id="rematchBtn" class="button is-warning" style="display:none;" onclick="rematch()">Реванш</button>
         <br/>
         <br/>
+        <button class="button" onclick="showCreatorLeaveModal()">Покинуть игру как создатель</button>
+        <br/>
+        <br/>
+        <button class="button" onclick="askBeforeLeave()">Покинуть игру с подтверждением</button>
+        <br/>
+        <br/>
         <button class="button" onclick="leaveCurrentGame()">Покинуть игру</button>
         <br/>
         <br/>
         <a class="button" href="/online">Вернуться к списку</a>
     </section>
 </div>
+
+<!--// modal windows for second player-->
+<div id="sessionClosedModal" class="modal" style="display:none; position: fixed; top:0; left:0; right:0; bottom:0; background: rgba(0,0,0,0.5);">
+    <div style="width:300px; margin:100px auto; background:#fff; padding:20px;">
+        <h3>Игровая сессия была закрыта!</h3>
+        <p>Возврат к списку через <span id="closeTimer">5</span> c...</p>
+        <button class="button" onclick="goToList()">К списку игр</button>
+    </div>
+</div>
+
+<!-- Модалка для подтверждения выхода создателем -->
+<div id="creatorLeaveModal" class="modal" style="display:none; position: fixed; top:0; left:0; right:0; bottom:0; background: rgba(0,0,0,0.5);">
+    <div style="width:300px; margin:100px auto; background:#fff; padding:20px;">
+        <h3>Выход из игры</h3>
+        <p>Вы уверены, что хотите покинуть игру?</p>
+        <button class="button is-danger" onclick="confirmCreatorLeave()">Выйти</button>
+        <button class="button" onclick="cancelCreatorLeave()">Отменить</button>
+    </div>
+</div>
+
 </body>
 </html>

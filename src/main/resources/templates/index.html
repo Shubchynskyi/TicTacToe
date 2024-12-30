@@ -63,10 +63,14 @@
                     <label class="label">Символ (X или O):</label>
                     <div class="control">
                         <div class="select">
-                            <select name="playerSymbol">
-                                <option value="X">X</option>
-                                <option value="O">O</option>
+                            <select name="playerSymbol" id="symbolSelect">
+                                <option value="X" th:selected="${lastSymbol=='X'}">X</option>
+                                <option value="O" th:selected="${lastSymbol=='O'}">O</option>
                             </select>
+<!--                            <select name="playerSymbol">-->
+<!--                                <option value="X">X</option>-->
+<!--                                <option value="O">O</option>-->
+<!--                            </select>-->
                         </div>
                     </div>
                 </div>
@@ -75,12 +79,18 @@
                     <label class="label">Сложность:</label>
                     <div class="control">
                         <div class="select">
-                            <select name="difficulty">
-                                <option value="easy">Easy</option>
-                                <option value="medium">Medium</option>
-                                <option value="hard">Hard</option>
-                                <option value="impossible">Impossible</option>
+                            <select name="difficulty" id="diffSelect">
+                                <option value="easy" th:selected="${lastDiff=='easy'}">Easy</option>
+                                <option value="medium" th:selected="${lastDiff=='medium'}">Medium</option>
+                                <option value="hard" th:selected="${lastDiff=='hard'}">Hard</option>
+                                <option value="impossible" th:selected="${lastDiff=='impossible'}">Impossible</option>
                             </select>
+<!--                            <select name="difficulty">-->
+<!--                                <option value="easy">Easy</option>-->
+<!--                                <option value="medium">Medium</option>-->
+<!--                                <option value="hard">Hard</option>-->
+<!--                                <option value="impossible">Impossible</option>-->
+<!--                            </select>-->
                         </div>
                     </div>
                 </div>

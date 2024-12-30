@@ -25,6 +25,8 @@ public class GameController {
             HttpSession session,
             Model model
     ) {
+        session.setAttribute("lastSymbol", playerSymbol);
+        session.setAttribute("lastDiff", difficulty);
         // Создаём Game
         Game game = new Game(gameMode, playerSymbol, difficulty);
         // Храним в сессии

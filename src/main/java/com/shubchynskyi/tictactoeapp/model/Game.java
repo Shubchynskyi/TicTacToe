@@ -21,6 +21,9 @@ public class Game {
     private boolean gameOver;
     private String winner; // "X","O","DRAW"
 
+    private int scoreHuman;
+    private int scoreAI;
+
     private DifficultyStrategy strategy;
 
     public Game() {
@@ -58,6 +61,15 @@ public class Game {
         this.winner = null;
 
         initStrategy();
+
+        // если игрок нолик, то AI ходит сразу
+        if ("single".equalsIgnoreCase(this.gameMode)) {
+            Sign aiSign = (this.playerSign==Sign.CROSS)? Sign.NOUGHT: Sign.CROSS;
+            if (aiSign==Sign.CROSS) {
+                // AI = X => ходит сразу
+                makeAiMoveIfNeeded();
+            }
+        }
     }
 
     private void initStrategy() {
@@ -118,6 +130,14 @@ public class Game {
         Sign wSign = checkWinSign();
         if (wSign != Sign.EMPTY) {
             gameOver = true;
+
+            // По окончании gameOver:
+            if (wSign==playerSign) {
+                scoreHuman++;
+            } else {
+                scoreAI++;
+            }
+
             if (wSign==Sign.CROSS) winner = "X";
             else winner = "O";
         } else {
@@ -180,6 +200,21 @@ public class Game {
         }
     }
 
+    public void resetBoard() {
+        Arrays.fill(this.board, Sign.EMPTY);
+        this.gameOver=false;
+        this.winner=null;
+        this.currentPlayer=Sign.CROSS; // default
+        // scoreHuman, scoreAI не трогаем
+        if ("single".equalsIgnoreCase(gameMode)) {
+            // if AI= X => AI ходит...
+            Sign aiSign = (playerSign==Sign.CROSS)? Sign.NOUGHT:Sign.CROSS;
+            if (aiSign==Sign.CROSS) {
+                makeAiMoveIfNeeded();
+            }
+        }
+    }
+
     public Sign getSignAt(int i) {
         return board[i];
     }
@@ -211,4 +246,7 @@ public class Game {
     public void setCurrentPlayerSign(Sign s) {
         this.currentPlayer = s;
     }
+
+    public int getScoreHuman(){return scoreHuman;}
+    public int getScoreAI(){return scoreAI;}
 }

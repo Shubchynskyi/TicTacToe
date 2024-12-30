@@ -11,17 +11,34 @@
 
     <script>
         let stompList = null;
+        // function connectList() {
+        //     const socket = new SockJS('/ws');
+        //     stompList = Stomp.over(socket);
+        //     stompList.connect({}, function(frame){
+        //         console.log('Connected to /ws for game-list: ' + frame);
+        //         stompList.subscribe('/topic/game-list', function(msg){
+        //             const updatedGames = JSON.parse(msg.body);
+        //             renderGameList(updatedGames);
+        //         });
+        //     });
+        // }
+
         function connectList() {
-            const socket = new SockJS('/ws');
-            stompList = Stomp.over(socket);
-            stompList.connect({}, function(frame){
-                console.log('Connected to /ws for game-list: ' + frame);
-                stompList.subscribe('/topic/game-list', function(msg){
-                    const updatedGames = JSON.parse(msg.body);
-                    renderGameList(updatedGames);
+            const sock = new SockJS('/ws');
+            const stompList = Stomp.over(sock);
+            stompList.connect({}, frame => {
+                console.log("Connected for /topic/game-list");
+                stompList.subscribe("/topic/game-list", msg => {
+                    const games = JSON.parse(msg.body);
+                    renderGameList(games);
                 });
             });
         }
+
+        window.addEventListener('load', ()=> {
+            connectList();
+            // + fetch('/online-list') ... etc.
+        });
 
         function renderGameList(games) {
             // У вас уже есть <tbody> со списком,
