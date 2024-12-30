@@ -67,6 +67,19 @@
         }
 
         window.addEventListener('load', connectList);
+
+        function forceRefresh() {
+            // либо просто перезагрузим страницу:
+            location.reload();
+
+            // или fetch('/online-list') и renderGameList(...)
+            // fetch('/online-list')
+            //     .then(r=>r.json())
+            //     .then(games => {
+            //         renderGameList(games);
+            //     })
+            //     .catch(e=>console.error(e));
+        }
     </script>
 </head>
 <body>
@@ -78,6 +91,7 @@
         <form action="/create-online" method="post">
             <button class="button is-primary">Создать новую игру</button>
         </form>
+        <button class="button" onclick="forceRefresh()">Обновить</button> <!-- <--- ADD -->
         <hr/>
         <table class="table is-fullwidth">
             <thead>
@@ -95,8 +109,15 @@
                  ИЛИ вообще убираем th:each, рендерим целиком JS -->
             <tr th:each="g : ${games}">
                 <td th:text="${g.gameId}">?</td>
-                <td th:text="${g.playerX}">?</td>
-                <td th:text="${g.playerO}">?</td>
+
+                <td th:if="${nick == g.creatorNick}" style="font-weight:bold;" th:text="${g.playerX}">X</td>
+                <td th:if="${nick != g.creatorNick}" th:text="${g.playerX}">X</td>
+
+                <td th:if="${nick == g.creatorNick}" style="font-weight:bold;" th:text="${g.playerO}">X</td>
+                <td th:if="${nick != g.creatorNick}" th:text="${g.playerO}">O</td>
+
+<!--                <td th:text="${g.playerX}">?</td>-->
+<!--                <td th:text="${g.playerO}">?</td>-->
                 <td>
                     <span th:if="${g.waitingForSecondPlayer}">Ожидает второго</span>
                     <span th:if="${!g.waitingForSecondPlayer}">Игра идёт</span>

@@ -127,15 +127,20 @@ public class Game {
     }
 
     private void checkWinOrDraw() {
+        if (gameOver) {
+            return; // <--- ADD: если уже gameOver, не считаем повторно
+        }
         Sign wSign = checkWinSign();
         if (wSign != Sign.EMPTY) {
             gameOver = true;
 
-            // По окончании gameOver:
-            if (wSign==playerSign) {
-                scoreHuman++;
-            } else {
-                scoreAI++;
+            if ("single".equalsIgnoreCase(gameMode)) {
+                // Прибавляем счёт только для single (в local режиме — нет ИИ)
+                if (wSign==playerSign) {
+                    scoreHuman++;
+                } else {
+                    scoreAI++;
+                }
             }
 
             if (wSign==Sign.CROSS) winner = "X";

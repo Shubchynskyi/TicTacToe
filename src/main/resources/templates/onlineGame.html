@@ -90,6 +90,21 @@
             document.getElementById('scoreX').innerText = onlineGame.scoreX;
             document.getElementById('scoreO').innerText = onlineGame.scoreO;
 
+            const pxEl = document.getElementById('playerX');
+            const poEl = document.getElementById('playerO');
+            // снимаем любые стили
+            pxEl.classList.remove('blink');
+            poEl.classList.remove('blink');
+
+            if (!onlineGame.finished) {
+                // если currentPlayer="X" => подсветим playerX
+                if (onlineGame.game.currentPlayer==="X") {
+                    pxEl.classList.add('blink');
+                } else if (onlineGame.game.currentPlayer==="O") {
+                    poEl.classList.add('blink');
+                }
+            }
+
             if (onlineGame.finished) {
                 // игра закончилась
                 if (game.winner === 'DRAW') {
@@ -106,6 +121,21 @@
                 document.getElementById('rematchBtn').style.display='none';
                 statusEl.innerText = 'Ход: ' + game.currentPlayer; // "X" or "O"
             }
+
+            let textX = onlineGame.playerX ?? '---';
+            let textO = onlineGame.playerO ?? '---';
+
+            // если не finished...
+            if (!onlineGame.finished) {
+                if (onlineGame.game.currentPlayer==="X" && onlineGame.playerX===currentNick) {
+                    textX += " (Ваш ход)";
+                } else if (onlineGame.game.currentPlayer==="O" && onlineGame.playerO===currentNick) {
+                    textO += " (Ваш ход)";
+                }
+            }
+
+            document.getElementById('playerX').innerText = textX;
+            document.getElementById('playerO').innerText = textO;
 
             document.getElementById('playerX').innerText = onlineGame.playerX ?? '---';
             document.getElementById('playerO').innerText = onlineGame.playerO ?? '---';
@@ -172,6 +202,12 @@
         }
 
     </script>
+    <style>
+        .blink {
+            font-weight: bold;
+            color: red; /* или как-то выделить */
+        }
+    </style>
 </head>
 <body>
 <div class="container">
