@@ -70,7 +70,13 @@
 
         function forceRefresh() {
             // либо просто перезагрузим страницу:
-            location.reload();
+            // location.reload();
+
+            // location.reload();
+            fetch('/online-list')
+                .then(r=>r.json())
+                .then(games => renderGameList(games))
+                .catch(e=> console.error(e));
 
             // или fetch('/online-list') и renderGameList(...)
             // fetch('/online-list')

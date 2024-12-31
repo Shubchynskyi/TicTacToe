@@ -10,6 +10,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicLong;
 
 @Service
@@ -17,6 +19,8 @@ public class OnlineGameService {
 
     private final ConcurrentHashMap<Long, OnlineGame> games = new ConcurrentHashMap<>();
     private final AtomicLong idGen = new AtomicLong(1000);
+
+    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
     public long createGame(String creatorNick) {
         long gid = idGen.incrementAndGet();
