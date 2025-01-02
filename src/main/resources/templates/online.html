@@ -1,104 +1,128 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <title>Online Games</title>
+    <title>Сетевые игры</title>
     <meta charset="UTF-8"/>
     <link rel="stylesheet"
           href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
-    <!-- ADD script for SockJS + STOMP -->
+    <!-- SockJS + STOMP -->
     <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
 
     <script>
         let stompList = null;
-        // function connectList() {
-        //     const socket = new SockJS('/ws');
-        //     stompList = Stomp.over(socket);
-        //     stompList.connect({}, function(frame){
-        //         console.log('Connected to /ws for game-list: ' + frame);
-        //         stompList.subscribe('/topic/game-list', function(msg){
-        //             const updatedGames = JSON.parse(msg.body);
-        //             renderGameList(updatedGames);
-        //         });
-        //     });
-        // }
 
         function connectList() {
+            console.log("connectList called");
             const sock = new SockJS('/ws');
-            const stompList = Stomp.over(sock);
+            stompList = Stomp.over(sock);
             stompList.connect({}, frame => {
-                console.log("Connected for /topic/game-list");
+                console.log("Connected for /topic/game-list, frame=" + frame);
+
+
                 stompList.subscribe("/topic/game-list", msg => {
                     const games = JSON.parse(msg.body);
-                    renderGameList(games);
+                    console.log("Got updated list via WS => partial render");
+                    if (window.location.pathname === "/online") {
+                        renderGameList(games);
+                    } else {
+                        console.log("We are not on /online => skip partial update");
+                    }
                 });
             });
         }
 
-        window.addEventListener('load', ()=> {
-            connectList();
-            // + fetch('/online-list') ... etc.
-        });
-
+        // Частичный рендер таблицы
         function renderGameList(games) {
-            // У вас уже есть <tbody> со списком,
-            // мы можем перерисовать таблицу через innerHTML
+            console.log("renderGameList called with ", games);
+
             const tbody = document.getElementById('gamesBody');
             let html = '';
+
+            // Получаем мой ник
+            const myNickSpan = document.getElementById('myNickSpan');
+            const myNick = myNickSpan ? myNickSpan.innerText : "";
+
             games.forEach(g => {
-                const status = g.waitingForSecondPlayer ? 'Ожидает второго' : 'Игра идёт';
-                html += `
-          <tr>
-            <td>${g.gameId}</td>
-            <td>${g.playerX ?? ''}</td>
-            <td>${g.playerO ?? ''}</td>
-            <td>${status}</td>
-            <td>
-              ${
-                    g.waitingForSecondPlayer
-                        ? `<a class="button is-small is-info" href="/join-online?gameId=${g.gameId}">Присоединиться</a>`
-                        : `<a class="button is-small is-link" href="/onlineGame?gameId=${g.gameId}">Перейти</a>`
+                // Определяем текст статуса (если хотите что-то особенное)
+                const status = g.waitingForSecondPlayer
+                    ? 'Ожидает второго'
+                    : 'Игра идёт';
+
+                // Логика "жирный" ник для creatorNick+playerX / playerO
+                let pxClass = ((myNick === g.creatorNick) && (g.playerX === myNick))
+                    ? "has-text-weight-bold" : "";
+                let poClass = ((myNick === g.creatorNick) && (g.playerO === myNick))
+                    ? "has-text-weight-bold" : "";
+
+                // ====> ВАЖНО: Генерируем колонку "Действие" (кнопка) <====
+                let actionHtml = '';
+                if (g.waitingForSecondPlayer) {
+                    // Игра ещё ждёт второго => кнопка "Присоединиться"
+                    actionHtml = `
+                <a class="button is-small is-info"
+                   href="/join-online?gameId=${g.gameId}">
+                    Присоединиться
+                </a>
+            `;
+                } else {
+                    // Уже 2 игрока
+                    if (myNick === g.playerX || myNick === g.playerO) {
+                        // Я один из игроков => "Перейти"
+                        actionHtml = `
+                    <a class="button is-small is-link"
+                       href="/onlineGame?gameId=${g.gameId}">
+                        Перейти
+                    </a>
+                `;
+                    } else {
+                        // Третий (не X, не O) => просто надпись "Идёт игра"
+                        actionHtml = `
+                    <span>Идёт игра</span>
+                `;
+                    }
                 }
-            </td>
-          </tr>
+
+                // ====> Формируем одну строку <tr> полностью <====
+                html += `
+            <tr>
+              <td>${g.gameId}</td>
+              <td class="${pxClass}">${g.playerX ?? ''}</td>
+              <td class="${poClass}">${g.playerO ?? ''}</td>
+              <td>${status}</td>
+              <td>${actionHtml}</td>
+            </tr>
         `;
             });
+
+            // Записываем новое содержимое таблицы
             tbody.innerHTML = html;
         }
 
-        window.addEventListener('load', connectList);
-
-        function forceRefresh() {
-            // либо просто перезагрузим страницу:
-            // location.reload();
-
-            // location.reload();
-            fetch('/online-list')
-                .then(r=>r.json())
-                .then(games => renderGameList(games))
-                .catch(e=> console.error(e));
-
-            // или fetch('/online-list') и renderGameList(...)
-            // fetch('/online-list')
-            //     .then(r=>r.json())
-            //     .then(games => {
-            //         renderGameList(games);
-            //     })
-            //     .catch(e=>console.error(e));
+        function doRefresh() {
+            window.location.reload();
         }
+
+        // Подключаемся при загрузке
+        window.addEventListener('load', () => {
+            connectList();
+        });
     </script>
 </head>
 <body>
 <div class="container">
     <section class="section">
         <h1 class="title">Сетевые игры</h1>
-        <p>Ваш ник: <span th:text="${nick}">?</span></p>
+        <!-- мой ник -->
+        <p>Ваш ник: <span id="myNickSpan" th:text="${nick}">?</span></p>
 
         <form action="/create-online" method="post">
-            <button class="button is-primary">Создать новую игру</button>
+            <button class="button is-primary" type="submit">Создать новую игру</button>
         </form>
-        <button class="button" onclick="forceRefresh()">Обновить</button> <!-- <--- ADD -->
+
+        <button class="button" onclick="doRefresh()">Обновить</button>
         <hr/>
+
         <table class="table is-fullwidth">
             <thead>
             <tr>
@@ -110,47 +134,50 @@
             </tr>
             </thead>
             <tbody id="gamesBody">
-            <!-- Здесь Thymeleaf сотрёт при генерации,
-                 но мы можем оставить th:each для начального списка
-                 ИЛИ вообще убираем th:each, рендерим целиком JS -->
             <tr th:each="g : ${games}">
                 <td th:text="${g.gameId}">?</td>
 
-                <td th:if="${nick == g.creatorNick}" style="font-weight:bold;" th:text="${g.playerX}">X</td>
-                <td th:if="${nick != g.creatorNick}" th:text="${g.playerX}">X</td>
-
-                <td th:if="${nick == g.creatorNick}" style="font-weight:bold;" th:text="${g.playerO}">X</td>
-                <td th:if="${nick != g.creatorNick}" th:text="${g.playerO}">O</td>
-
-<!--                <td th:text="${g.playerX}">?</td>-->
-<!--                <td th:text="${g.playerO}">?</td>-->
-                <td>
-                    <span th:if="${g.waitingForSecondPlayer}">Ожидает второго</span>
-                    <span th:if="${!g.waitingForSecondPlayer}">Игра идёт</span>
+                <td th:text="${g.playerX}"
+                    th:classappend="${(nick == g.creatorNick && nick == g.playerX)}
+                                     ? 'has-text-weight-bold':''">
                 </td>
-<!--                <td>-->
-<!--                    <a class="button is-small is-info"-->
-<!--                       th:href="@{/join-online(gameId=${g.gameId})}"-->
-<!--                       th:if="${g.waitingForSecondPlayer}">-->
-<!--                        Присоединиться-->
-<!--                    </a>-->
-<!--                    <span th:if="${!g.waitingForSecondPlayer}">Идёт игра</span>-->
-<!--                </td>-->
+                <td th:text="${g.playerO}"
+                    th:classappend="${(nick == g.creatorNick && nick == g.playerO)}
+                                     ? 'has-text-weight-bold':''">
+                </td>
+
                 <td>
+                    <span th:if="${g.waitingForSecondPlayer}">
+                        Ожидает второго
+                    </span>
+                    <span th:if="${!g.waitingForSecondPlayer}">
+                        Игра идёт
+                    </span>
+                </td>
+
+                <td>
+                    <!-- If waiting => Join link -->
                     <a class="button is-small is-info"
                        th:href="@{/join-online(gameId=${g.gameId})}"
                        th:if="${g.waitingForSecondPlayer}">
                         Присоединиться
                     </a>
+
+                    <!-- If 2 players => check if I'm X/O => "Перейти" else "Идёт игра" -->
+                    <span th:if="${(!g.waitingForSecondPlayer)
+                                   && (nick != g.playerX && nick != g.playerO)}">Идёт игра</span>
+
                     <a class="button is-small is-link"
                        th:href="@{/onlineGame(gameId=${g.gameId})}"
-                       th:if="${!g.waitingForSecondPlayer}">
-                        Идёт игра
+                       th:if="${(!g.waitingForSecondPlayer)
+                                && (nick == g.playerX || nick == g.playerO)}">
+                        Перейти
                     </a>
                 </td>
             </tr>
             </tbody>
         </table>
+
         <br/>
         <a class="button" href="/">Назад</a>
     </section>
