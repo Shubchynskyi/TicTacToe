@@ -1,14 +1,13 @@
 package com.shubchynskyi.tictactoeapp.service;
 
-import com.shubchynskyi.tictactoeapp.entity.Difficulty;
-import com.shubchynskyi.tictactoeapp.entity.Sign;
 import com.shubchynskyi.tictactoeapp.model.Game;
 import com.shubchynskyi.tictactoeapp.model.OnlineGame;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -66,15 +65,15 @@ public class OnlineGameService {
 
     public OnlineGame makeMove(long gameId, String nick, int row, int col) {
         OnlineGame og = games.get(gameId);
-        if (og==null || og.isFinished()) return null;
+        if (og == null || og.isFinished()) return null;
 
         Game g = og.getGame();
         if (!g.isGameOver()) {
             String cur = g.getCurrentPlayer();
             // "X" => og.getPlayerX(), "O" => og.getPlayerO()
-            if ("X".equals(cur) && og.getPlayerX()!=null && og.getPlayerX().equals(nick)) {
+            if ("X".equals(cur) && og.getPlayerX() != null && og.getPlayerX().equals(nick)) {
                 g.makeMove(row, col);
-            } else if ("O".equals(cur) && og.getPlayerO()!=null && og.getPlayerO().equals(nick)) {
+            } else if ("O".equals(cur) && og.getPlayerO() != null && og.getPlayerO().equals(nick)) {
                 g.makeMove(row, col);
             }
 
@@ -86,11 +85,11 @@ public class OnlineGameService {
                 } else if ("X".equals(w)) {
                     og.setWinnerNick(og.getPlayerX());
                     // <--- ADD score for X
-                    og.setScoreX(og.getScoreX()+1);
+                    og.setScoreX(og.getScoreX() + 1);
                 } else if ("O".equals(w)) {
                     og.setWinnerNick(og.getPlayerO());
                     // <--- ADD score for O
-                    og.setScoreO(og.getScoreO()+1);
+                    og.setScoreO(og.getScoreO() + 1);
                 }
             }
         }
@@ -105,13 +104,13 @@ public class OnlineGameService {
                 games.remove(gameId);
                 return true; // room closed
             }
-            boolean wasPlayerX = (og.getPlayerX()!=null && og.getPlayerX().equals(nick));
-            boolean wasPlayerO = (og.getPlayerO()!=null && og.getPlayerO().equals(nick));
+            boolean wasPlayerX = (og.getPlayerX() != null && og.getPlayerX().equals(nick));
+            boolean wasPlayerO = (og.getPlayerO() != null && og.getPlayerO().equals(nick));
 
             if (wasPlayerX) og.setPlayerX(null);
             else if (wasPlayerO) og.setPlayerO(null);
 
-            if (og.getPlayerX()==null && og.getPlayerO()==null) {
+            if (og.getPlayerX() == null && og.getPlayerO() == null) {
                 games.remove(gameId);
                 return true; // both left => room closed
             }
@@ -127,49 +126,9 @@ public class OnlineGameService {
         return false;
     }
 
-//    public void leaveGame(long gameId, String nick) {
-//        OnlineGame og = games.get(gameId);
-//        if (og != null) {
-//            // <--- 2.1. Если создатель уходит, закрываем комнату
-//            if (og.getCreatorNick()!=null && og.getCreatorNick().equals(nick)) {
-//                // Удаляем игру
-//                games.remove(gameId);
-//                return;
-//            }
-//
-//            // <--- 2.2. Если уходит второй игрок - надо обнулить счёт,
-//            // освободить слот O (или X), чтоб можно было снова присоединиться
-//            boolean wasPlayerX = (og.getPlayerX()!=null && og.getPlayerX().equals(nick));
-//            boolean wasPlayerO = (og.getPlayerO()!=null && og.getPlayerO().equals(nick));
-//
-//            if (wasPlayerX) {
-//                og.setPlayerX(null);
-//            } else if (wasPlayerO) {
-//                og.setPlayerO(null);
-//            }
-//
-//            // Если ушёл «второй», а первый (создатель) остаётся => сбросить счёт
-//            // finished=false, waitingForSecondPlayer=true
-//            if ((wasPlayerX || wasPlayerO)
-//                    && (og.getPlayerX()!=null || og.getPlayerO()!=null) ) {
-//                // room not empty => one is still inside
-//                og.setScoreX(0);
-//                og.setScoreO(0);
-//                og.setFinished(false);
-//                og.setWinnerNick(null);
-//                og.setWaitingForSecondPlayer(true);
-//            }
-//
-//            // Если после выхода в комнате никого не осталось
-//            if (og.getPlayerX()==null && og.getPlayerO()==null) {
-//                games.remove(gameId);
-//            }
-//        }
-//    }
-
     public void finishGame(long gameId) {
         OnlineGame og = games.get(gameId);
-        if (og!=null) {
+        if (og != null) {
             og.setFinished(true);
         }
     }
@@ -177,7 +136,7 @@ public class OnlineGameService {
     // <--- ADD: rematchGame, меняем X/O заново
     public OnlineGame rematchGame(long gameId) {
         OnlineGame og = games.get(gameId);
-        if (og==null) return null;
+        if (og == null) return null;
         if (!og.isFinished()) return og; // игра не закончена
 
         // очищаем поле, winnerNick, finished
@@ -187,11 +146,11 @@ public class OnlineGameService {
 
         // Счёт уже увеличен при makeMove
 
-        boolean randomX = (Math.random()<0.5);
+        boolean randomX = (Math.random() < 0.5);
         if (randomX) {
-            g = new Game("online","X","easy");
+            g = new Game("online", "X", "easy");
         } else {
-            g = new Game("online","O","easy");
+            g = new Game("online", "O", "easy");
             String playerX = og.getPlayerX();
             og.setPlayerX(og.getPlayerO());
             og.setPlayerO(playerX);
@@ -199,11 +158,53 @@ public class OnlineGameService {
             og.setScoreX(og.getScoreO());
             og.setScoreO(scoreX);
         }
-        og.setWaitingForSecondPlayer( (og.getPlayerX()==null || og.getPlayerO()==null) );
+        og.setWaitingForSecondPlayer((og.getPlayerX() == null || og.getPlayerO() == null));
         og.setFinished(false);
         og.setWinnerNick(null);
 
         og.setGame(g);
         return og;
     }
+
+    public void deleteGame(long gameId) {
+        games.remove(gameId);
+    }
+
+    public void startInactivityTimer(long gameId,
+                                     SimpMessagingTemplate msgTemplate,
+                                     int minutes) {
+        CompletableFuture.runAsync(() -> {
+            try {
+                // Спим (minutes - 0.5) => TIMELEFT_30
+                long half = (minutes * 60L - 30) * 1000L;
+                if (half < 0) half=0; // edge case
+                Thread.sleep(half);
+
+                OnlineGame og = getOnlineGame(gameId);
+                if(og!=null && !og.isFinished()) {
+                    msgTemplate.convertAndSend(
+                            "/topic/online-game-"+gameId, "\"TIMELEFT_30\"");
+                }
+
+                // Спим 30с => CLOSED
+                Thread.sleep(30_000L);
+                og = getOnlineGame(gameId);
+                if (og!=null && !og.isFinished()) {
+                    og.setFinished(true);
+                    deleteGame(gameId);
+                    msgTemplate.convertAndSend(
+                            "/topic/online-game-"+gameId, "\"CLOSED\""
+                    );
+                    // ОБНОВИМ список
+                    msgTemplate.convertAndSend(
+                            "/topic/game-list", listGames()
+                    );
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }, Executors.newSingleThreadExecutor());
+    }
+
+
 }

@@ -1,10 +1,11 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <title>Local Game</title>
+    <title>Локальная / Одиночная Игра</title>
     <meta charset="UTF-8"/>
     <link rel="stylesheet"
           href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+
     <script>
         async function refreshGameState() {
             const resp = await fetch('/game-state');
@@ -25,34 +26,44 @@
         }
 
         function updateBoard(game) {
-            // game.board = array of 9: CROSS,NOUGHT,EMPTY
-            for (let i=0; i<9; i++){
+            // game.board = array of 9: CROSS, NOUGHT, EMPTY
+            for (let i = 0; i < 9; i++) {
                 const cellEl = document.getElementById('cell'+i);
-                if (game.board[i] === 'CROSS') cellEl.innerText='X';
-                else if (game.board[i] === 'NOUGHT') cellEl.innerText='O';
-                else cellEl.innerText='';
+                if (game.board[i] === 'CROSS') {
+                    cellEl.innerText='X';
+                } else if (game.board[i] === 'NOUGHT') {
+                    cellEl.innerText='O';
+                } else {
+                    cellEl.innerText='';
+                }
             }
         }
 
         function updateStatus(game) {
             const st = document.getElementById('status');
-            document.getElementById('scoreHuman').innerText = game.scoreHuman;
-            document.getElementById('scoreAI').innerText = game.scoreAI;
+
+            // Если single -> показываем счёт, иначе скрываем
+            if (game.gameMode === 'single') {
+                document.getElementById('scorePanel').style.display='block';
+                document.getElementById('scoreHuman').innerText=game.scoreHuman;
+                document.getElementById('scoreAI').innerText=game.scoreAI;
+            } else {
+                // local (2 players) => не показываем счёт
+                document.getElementById('scorePanel').style.display='none';
+            }
+
             if (game.gameOver) {
                 document.getElementById('restartBtn').innerText="Заново";
-                if (game.winner==='DRAW') {
+                if (game.winner === 'DRAW') {
                     st.innerText='Ничья!';
                 } else {
-                    st.innerText='Победитель: '+game.winner;
+                    st.innerText='Победитель: ' + game.winner;
                 }
             } else {
-                st.innerText='Ход: '+game.currentPlayer;
                 document.getElementById('restartBtn').innerText="Рестарт";
+                st.innerText = 'Ход: ' + game.currentPlayer;
             }
         }
-
-        window.addEventListener('load', () => { refreshGameState(); });
-
 
         async function restartLocal() {
             const resp = await fetch('/restart-local');
@@ -63,50 +74,71 @@
             }
         }
 
+        window.addEventListener('load', ()=> {
+            refreshGameState();
+        });
     </script>
+
 </head>
 <body>
 <div class="container">
     <section class="section">
-        <h1 class="title">Локальная/Одиночная Игра</h1>
+        <h1 class="title">Локальная / Одиночная Игра</h1>
         <p id="status" style="font-weight:bold;">...</p>
 
-        <p>Ваши победы: <span id="scoreHuman">0</span></p>
-        <p>Победы AI: <span id="scoreAI">0</span></p>
+        <div id="scorePanel" style="display:none; margin-bottom:1rem;">
+            <p>Счёт игрока: <span id="scoreHuman">0</span></p>
+            <p>Счёт AI: <span id="scoreAI">0</span></p>
+        </div>
 
+        <!-- Старый код поля -->
         <div style="margin-top:20px;">
             <div style="display:flex;">
-                <div id="cell0" class="box" style="width:60px;height:60px;font-size:24px;text-align:center;cursor:pointer;"
+                <div id="cell0" class="box"
+                     style="width:60px;height:60px;font-size:24px;text-align:center;
+                    cursor:pointer;margin:2px;"
                      onclick="makeMove(0,0)"></div>
-                <div id="cell1" class="box" style="width:60px;height:60px;font-size:24px;text-align:center;cursor:pointer;"
+                <div id="cell1" class="box"
+                     style="width:60px;height:60px;font-size:24px;text-align:center;
+                    cursor:pointer;margin:2px;"
                      onclick="makeMove(0,1)"></div>
-                <div id="cell2" class="box" style="width:60px;height:60px;font-size:24px;text-align:center;cursor:pointer;"
+                <div id="cell2" class="box"
+                     style="width:60px;height:60px;font-size:24px;text-align:center;
+                    cursor:pointer;margin:2px;"
                      onclick="makeMove(0,2)"></div>
             </div>
             <div style="display:flex;">
-                <div id="cell3" class="box" style="width:60px;height:60px;font-size:24px;text-align:center;cursor:pointer;"
+                <div id="cell3" class="box"
+                     style="width:60px;height:60px;font-size:24px;text-align:center;
+                    cursor:pointer;margin:2px;"
                      onclick="makeMove(1,0)"></div>
-                <div id="cell4" class="box" style="width:60px;height:60px;font-size:24px;text-align:center;cursor:pointer;"
+                <div id="cell4" class="box"
+                     style="width:60px;height:60px;font-size:24px;text-align:center;
+                    cursor:pointer;margin:2px;"
                      onclick="makeMove(1,1)"></div>
-                <div id="cell5" class="box" style="width:60px;height:60px;font-size:24px;text-align:center;cursor:pointer;"
+                <div id="cell5" class="box"
+                     style="width:60px;height:60px;font-size:24px;text-align:center;
+                    cursor:pointer;margin:2px;"
                      onclick="makeMove(1,2)"></div>
             </div>
             <div style="display:flex;">
-                <div id="cell6" class="box" style="width:60px;height:60px;font-size:24px;text-align:center;cursor:pointer;"
+                <div id="cell6" class="box"
+                     style="width:60px;height:60px;font-size:24px;text-align:center;
+                    cursor:pointer;margin:2px;"
                      onclick="makeMove(2,0)"></div>
-                <div id="cell7" class="box" style="width:60px;height:60px;font-size:24px;text-align:center;cursor:pointer;"
+                <div id="cell7" class="box"
+                     style="width:60px;height:60px;font-size:24px;text-align:center;
+                    cursor:pointer;margin:2px;"
                      onclick="makeMove(2,1)"></div>
-                <div id="cell8" class="box" style="width:60px;height:60px;font-size:24px;text-align:center;cursor:pointer;"
+                <div id="cell8" class="box"
+                     style="width:60px;height:60px;font-size:24px;text-align:center;
+                    cursor:pointer;margin:2px;"
                      onclick="makeMove(2,2)"></div>
             </div>
         </div>
 
         <br/>
-
-        <button class="button"
-                id="restartBtn"
-                onclick="restartLocal() ">Рестарт</button>
-
+        <button class="button" id="restartBtn" onclick="restartLocal()">Рестарт</button>
         <a class="button" href="/">Вернуться на главную</a>
     </section>
 </div>

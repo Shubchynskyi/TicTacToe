@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <title>Online Game</title>
+    <title>Онлайн-игра</title>
     <meta charset="UTF-8"/>
     <link rel="stylesheet"
           href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
@@ -9,25 +9,29 @@
     <!-- SockJS + STOMP -->
     <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
-
     <style>
-        /* Вместо красного делаем просто жирным (bold) */
-        .current-turn {
-            font-weight: bold;
-        }
-
-        /* Модалки (примерно как у вас) */
+        .current-turn { font-weight: bold; }
+        .my-nick { font-weight:bold; color:green; }
         .modal {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.5);
+            display:none;
+            position:fixed; top:0; left:0; right:0; bottom:0;
+            background:rgba(0,0,0,0.5);
         }
         .modal-content {
-            width: 300px;
-            margin: 100px auto;
-            background: #fff;
-            padding: 20px;
+            width:300px; margin:100px auto; background:#fff; padding:20px;
+            text-align:center;
+        }
+        /* Для поля: между колонками margin-left:2px, между строками margin-top:2px */
+        .row { display:flex; margin-top:2px; }
+        .row .cell:not(:first-child) { margin-left:2px; }
+        .cell {
+            width:60px; height:60px;
+            text-align:center; font-size:24px; cursor:pointer;
+        }
+        /* Кнопки одинакового размера */
+        .modal-button {
+            min-width:100px;
+            margin:0 5px;
         }
     </style>
 </head>
@@ -35,10 +39,12 @@
 <div class="container">
     <section class="section">
         <h1 class="title">Онлайн-игра #<span id="gid"></span></h1>
-        <p>Ваш ник: <span id="nick" th:text="${nick}">Guest</span></p>
+        <p>Ваш ник:
+            <span id="nick" class="my-nick" th:text="${nick}">Guest</span>
+        </p>
 
-        <!-- ADD: Блок с двумя игроками и счётами -->
-        <div id="playersInfo" style="margin-bottom: 1rem;">
+        <div id="playersInfo" style="margin-bottom:1rem;">
+            <p>Ваш символ: <span id="yourSymbol" style="font-weight:bold;"></span></p>
             <p>
                 <span id="playerX" style="font-weight:bold;">X</span>
                 (счёт: <span id="scoreX">0</span>)
@@ -46,293 +52,259 @@
                 <span id="playerO" style="font-weight:bold;">O</span>
                 (счёт: <span id="scoreO">0</span>)
             </p>
-            <!-- В этом же блоке выведем "Ваш ход" или "Ожидаем ход" -->
-            <p id="turnInfo" style="font-style: italic; margin-top:0.5rem;">
-                <!-- JS заполнит -->
-            </p>
+            <p id="turnInfoEl" style="font-style:italic; margin-top:0.5rem;"></p>
         </div>
+        <p id="status" style="font-weight:bold;margin-bottom:1rem;"></p>
 
-        <!-- ADD: Таймер неактивности (2 минуты) -->
-        <div id="inactivityBlock" style="display:none; margin-bottom: 1rem;">
-            <p>До завершения игры осталось: <span id="inactivityTimer">120</span> сек.</p>
-        </div>
-        <!-- /ADD -->
-
-        <!-- Статус игры (победа/ничья) -->
-        <p id="status" style="font-weight: bold; margin:1rem 0;">...</p>
-
-        <div style="margin-top: 20px;">
-            <div style="display: flex;">
-                <div id="cell0" class="box" style="width:60px;height:60px;margin:2px;text-align:center;font-size:24px;cursor:pointer;"
+        <!-- Поле 3x3 -->
+        <div style="margin-top:20px;">
+            <div style="display:flex;">
+                <div id="cell0" class="box"
+                     style="width:60px;height:60px;font-size:24px;text-align:center;cursor:pointer;margin:2px;"
                      onclick="sendMove(0,0)"></div>
-                <div id="cell1" class="box" style="width:60px;height:60px;margin:2px;text-align:center;font-size:24px;cursor:pointer;"
+                <div id="cell1" class="box"
+                     style="width:60px;height:60px;font-size:24px;text-align:center;cursor:pointer;margin:2px;"
                      onclick="sendMove(0,1)"></div>
-                <div id="cell2" class="box" style="width:60px;height:60px;margin:2px;text-align:center;font-size:24px;cursor:pointer;"
+                <div id="cell2" class="box"
+                     style="width:60px;height:60px;font-size:24px;text-align:center;cursor:pointer;margin:2px;"
                      onclick="sendMove(0,2)"></div>
             </div>
-            <div style="display: flex;">
-                <div id="cell3" class="box" style="width:60px;height:60px;margin:2px;text-align:center;font-size:24px;cursor:pointer;"
+            <div style="display:flex;">
+                <div id="cell3" class="box"
+                     style="width:60px;height:60px;font-size:24px;text-align:center;cursor:pointer;margin:2px;"
                      onclick="sendMove(1,0)"></div>
-                <div id="cell4" class="box" style="width:60px;height:60px;margin:2px;text-align:center;font-size:24px;cursor:pointer;"
+                <div id="cell4" class="box"
+                     style="width:60px;height:60px;font-size:24px;text-align:center;cursor:pointer;margin:2px;"
                      onclick="sendMove(1,1)"></div>
-                <div id="cell5" class="box" style="width:60px;height:60px;margin:2px;text-align:center;font-size:24px;cursor:pointer;"
+                <div id="cell5" class="box"
+                     style="width:60px;height:60px;font-size:24px;text-align:center;cursor:pointer;margin:2px;"
                      onclick="sendMove(1,2)"></div>
             </div>
-            <div style="display: flex;">
-                <div id="cell6" class="box" style="width:60px;height:60px;margin:2px;text-align:center;font-size:24px;cursor:pointer;"
+            <div style="display:flex;">
+                <div id="cell6" class="box"
+                     style="width:60px;height:60px;font-size:24px;text-align:center;cursor:pointer;margin:2px;"
                      onclick="sendMove(2,0)"></div>
-                <div id="cell7" class="box" style="width:60px;height:60px;margin:2px;text-align:center;font-size:24px;cursor:pointer;"
+                <div id="cell7" class="box"
+                     style="width:60px;height:60px;font-size:24px;text-align:center;cursor:pointer;margin:2px;"
                      onclick="sendMove(2,1)"></div>
-                <div id="cell8" class="box" style="width:60px;height:60px;margin:2px;text-align:center;font-size:24px;cursor:pointer;"
+                <div id="cell8" class="box"
+                     style="width:60px;height:60px;font-size:24px;text-align:center;cursor:pointer;margin:2px;"
                      onclick="sendMove(2,2)"></div>
             </div>
         </div>
-        <br/>
+
         <button id="rematchBtn" class="button is-warning" style="display:none;" onclick="rematch()">Реванш</button>
         <br/><br/>
 
-        <!-- Кнопка "Покинуть игру" (для создателя/для всех) -->
-        <button class="button" onclick="showCreatorLeaveModal()">Покинуть игру (модальное окно)</button>
+        <!-- Выход -->
+        <button class="button" onclick="showCreatorLeaveModal()">Покинуть игру</button>
         <br/><br/>
-
-        <!-- Доп. варианты подтверждения, если нужно -->
-        <button class="button" onclick="askBeforeLeave()">Покинуть игру (confirm)</button>
-        <br/><br/>
-
-        <button class="button" onclick="leaveCurrentGame()">Покинуть игру (мгновенно)</button>
-        <br/><br/>
-
         <a class="button" href="/online">Вернуться к списку</a>
     </section>
 </div>
 
-<!-- Модалка "sessionClosed" (для второго игрока, если игра закрыта) -->
-<div id="sessionClosedModal" class="modal">
+<!-- 30 seconds modal -->
+<div id="timeLeft30Modal" class="modal">
     <div class="modal-content">
-        <h3>Игровая сессия была закрыта!</h3>
-        <p>Возврат к списку через <span id="closeTimer">5</span> c...</p>
-        <button class="button" onclick="goToList()">К списку игр</button>
+        <h3>До конца игры осталось 30 секунд</h3>
+        <p>Вы можете продолжить, или выйти сейчас.</p>
+        <br/>
+        <button class="button is-primary modal-button" onclick="closeTimeLeft30Modal()">Ок</button>
+        <button class="button is-danger modal-button" onclick="leaveCurrentGame()">Выйти</button>
     </div>
 </div>
 
-<!-- Модалка "creatorLeave" (подтверждение для создателя) -->
+<!-- 5 sec sessionClosed -->
+<div id="sessionClosedModal" class="modal">
+    <div class="modal-content">
+        <h3>Игровая сессия закрыта</h3>
+        <p>Возврат к списку через <span id="closeTimer">5</span> сек.</p>
+        <div style="margin-top:1rem;">
+            <button class="button is-info" onclick="goToList()">Выйти сейчас</button>
+        </div>
+    </div>
+</div>
+
+<!-- creatorLeaveModal -->
 <div id="creatorLeaveModal" class="modal">
     <div class="modal-content">
         <h3>Выход из игры</h3>
-        <p>Вы уверены, что хотите покинуть игру?</p>
-        <button class="button is-danger" onclick="confirmCreatorLeave()">Выйти</button>
-        <button class="button" onclick="cancelCreatorLeave()">Отменить</button>
+        <p>Вы уверены, что хотите выйти?</p>
+        <div style="margin-top:1rem;">
+            <button class="button is-danger modal-button" onclick="confirmCreatorLeave()">Выйти</button>
+            <button class="button modal-button" onclick="cancelCreatorLeave()">Отменить</button>
+        </div>
     </div>
 </div>
 
 <script>
-    let stompClient = null;
-    let gameId = 0;
-    let currentNick = "";
+    let stompClient=null;
+    let gameId=0;
+    let currentNick="";
 
-    // Таймер неактивности (2 мин = 120 сек)
-    let inactivitySecs = 120;
-    let inactivityInterval = null;
+    function connect(){
+        const sock=new SockJS('/ws');
+        stompClient=Stomp.over(sock);
+        stompClient.connect({}, frame=>{
+            console.log("Connected: "+frame);
 
-    function connect() {
-        const socket = new SockJS('/ws');
-        stompClient = Stomp.over(socket);
-        stompClient.connect({}, function(frame) {
-            console.log('Connected: ' + frame);
-
-            // Подписываемся
-            stompClient.subscribe('/topic/online-game-' + gameId, function(message) {
-                if (!message.body) {
+            // подписка
+            stompClient.subscribe('/topic/online-game-'+gameId,(message)=>{
+                if(!message.body) return;
+                if(message.body==='"CLOSED"'){
+                    showSessionClosedModal();
                     return;
                 }
-
-                if (message.body === '"CLOSED"') {
-                    showSessionClosedModal(); // показываем модалку
+                if(message.body==='"TIMELEFT_30"'){
+                    document.getElementById('timeLeft30Modal').style.display='block';
                     return;
                 }
-
-                const onlineGame = JSON.parse(message.body);
-
-                updateBoard(onlineGame.game);
-                updateStatus(onlineGame);
+                const og=JSON.parse(message.body);
+                updateBoard(og.game);
+                updateStatus(og);
             });
 
-            // Сразу после connect() запросим актуальное состояние
-            fetch('/online-state?gameId=' + gameId)
-                .then(resp => resp.json())
-                .then(og => {
+            // запрос нач. состояния
+            fetch('/online-state?gameId='+gameId)
+                .then(r=>r.json())
+                .then(og=>{
                     updateBoard(og.game);
                     updateStatus(og);
                 })
-                .catch(e => console.error('Cannot fetch online-state', e));
+                .catch(e=>console.error(e));
         });
     }
 
-    function sendMove(row, col) {
-        // при каждом ходе сбрасываем таймер
-        resetInactivityTimer();
-
-        const msg = {
-            gameId: gameId,
-            nick: currentNick,
-            row: row,
-            col: col
-        };
-        stompClient.send("/app/online-move", {}, JSON.stringify(msg));
+    function closeTimeLeft30Modal(){
+        document.getElementById('timeLeft30Modal').style.display='none';
     }
 
-    function rematch() {
-        const msg = { gameId: gameId };
-        stompClient.send("/app/rematch", {}, JSON.stringify(msg));
+    function sendMove(r,c){
+        const msg={gameId:gameId,nick:currentNick,row:r,col:c};
+        stompClient.send("/app/online-move",{},JSON.stringify(msg));
     }
 
-    // UPDATE: основная логика UI
-    function updateStatus(onlineGame) {
-        const game = onlineGame.game;
-        const statusEl = document.getElementById('status');
+    function rematch(){
+        const msg={gameId:gameId};
+        stompClient.send("/app/rematch",{},JSON.stringify(msg));
+    }
 
-        // Счет
-        document.getElementById('scoreX').innerText = onlineGame.scoreX;
-        document.getElementById('scoreO').innerText = onlineGame.scoreO;
+    function updateStatus(onlineGame){
+        const game=onlineGame.game;
+        const stEl=document.getElementById('status');
 
-        // Подсвечивать ник того, кто ходит
-        let pxEl = document.getElementById('playerX');
-        let poEl = document.getElementById('playerO');
-        pxEl.classList.remove('current-turn');
-        poEl.classList.remove('current-turn');
+        // Ваш символ
+        let symbol="";
+        if(onlineGame.playerX===currentNick) symbol="X";
+        else if(onlineGame.playerO===currentNick) symbol="O";
+        document.getElementById('yourSymbol').innerText=symbol;
 
-        // Контейнер с "Ваш ход" / "Ожидаем..."
-        let turnInfoEl = document.getElementById('turnInfo');
-        turnInfoEl.innerText = ""; // очистим, потом наполним
+        // Счёт
+        document.getElementById('scoreX').innerText=onlineGame.scoreX;
+        document.getElementById('scoreO').innerText=onlineGame.scoreO;
 
-        if (!onlineGame.finished) {
-            if (game.currentPlayer === "X") {
-                pxEl.classList.add('current-turn');
-                if (onlineGame.playerX === currentNick) {
-                    turnInfoEl.innerText = "Ваш ход";
+        // Имена
+        let px=document.getElementById('playerX');
+        let po=document.getElementById('playerO');
+        px.innerText=onlineGame.playerX??"X";
+        po.innerText=onlineGame.playerO??"O";
+
+        px.classList.remove('current-turn','my-nick');
+        po.classList.remove('current-turn','my-nick');
+
+        // ваш ник зелёный
+        if(onlineGame.playerX===currentNick) px.classList.add('my-nick');
+        if(onlineGame.playerO===currentNick) po.classList.add('my-nick');
+
+        const turnInfoEl=document.getElementById('turnInfoEl');
+        turnInfoEl.innerText="";
+
+        if(!onlineGame.finished){
+            if (game.currentPlayer==="X") {
+                px.classList.add('current-turn');
+                if (onlineGame.playerX===currentNick) {
+                    turnInfoEl.innerHTML = "<b>Ваш ход</b>";
                 } else {
-                    turnInfoEl.innerText = "Ожидаем ход игрока: " + (onlineGame.playerX ?? "X");
+                    turnInfoEl.innerText = "Ожидаем ход игрока: " + (onlineGame.playerX??"X");
                 }
             } else {
-                // currentPlayer=O
-                poEl.classList.add('current-turn');
-                if (onlineGame.playerO === currentNick) {
-                    turnInfoEl.innerText = "Ваш ход";
+                po.classList.add('current-turn');
+                if (onlineGame.playerO===currentNick) {
+                    turnInfoEl.innerHTML = "<b>Ваш ход</b>";
                 } else {
-                    turnInfoEl.innerText = "Ожидаем ход игрока: " + (onlineGame.playerO ?? "O");
+                    turnInfoEl.innerText = "Ожидаем ход игрока: " + (onlineGame.playerO??"O");
                 }
             }
         }
 
-        if (onlineGame.finished) {
-            if (game.winner === 'DRAW') {
-                statusEl.innerText = 'Ничья!';
-            } else if (game.winner === 'X') {
-                statusEl.innerText = 'Победил: ' + (onlineGame.playerX ?? 'X');
-            } else if (game.winner === 'O') {
-                statusEl.innerText = 'Победил: ' + (onlineGame.playerO ?? 'O');
+        if(onlineGame.finished){
+            if(game.winner==="DRAW"){
+                stEl.innerText="Ничья!";
+            } else if(game.winner==="X"){
+                stEl.innerText="Победил: "+(onlineGame.playerX??"X");
+            } else if(game.winner==="O"){
+                stEl.innerText="Победил: "+(onlineGame.playerO??"O");
             }
-            document.getElementById('rematchBtn').style.display = 'inline-block';
+            document.getElementById('rematchBtn').style.display='inline-block';
         } else {
+            stEl.innerText="";
             document.getElementById('rematchBtn').style.display='none';
-            statusEl.innerText = ""; // убираем "Ход: X"
-        }
-
-        // Если второй игрок появился, можно запустить таймер неактивности
-        // (и сбрасывать при каждом ходе)
-        if (onlineGame.playerX && onlineGame.playerO) {
-            document.getElementById('inactivityBlock').style.display = 'block';
-        } else {
-            document.getElementById('inactivityBlock').style.display = 'none';
         }
     }
 
-    function updateBoard(game) {
-        const board = game.board;
-        for (let i = 0; i < 9; i++) {
-            const cell = document.getElementById('cell' + i);
-            const val = board[i];
-            if (val === 'CROSS') {
-                cell.innerText = 'X';
-            } else if (val === 'NOUGHT') {
-                cell.innerText = 'O';
-            } else {
-                cell.innerText = '';
-            }
+    function updateBoard(game){
+        for(let i=0;i<9;i++){
+            const cell=document.getElementById('cell'+i);
+            if(game.board[i]==='CROSS') cell.innerText='X';
+            else if(game.board[i]==='NOUGHT') cell.innerText='O';
+            else cell.innerText='';
         }
     }
 
-    // Логика выхода
-    function leaveCurrentGame() {
-        const msg = { gameId: gameId, nick: currentNick };
-        stompClient.send("/app/leave-game", {}, JSON.stringify(msg));
-        window.location.href = "/online";
-    }
-
-    function askBeforeLeave() {
-        if (confirm("Вы уверены, что хотите выйти?")) {
-            leaveCurrentGame();
-        }
-    }
-
-    // Модальное окно создателя
-    function showCreatorLeaveModal() {
-        document.getElementById('creatorLeaveModal').style.display = 'block';
-    }
-    function confirmCreatorLeave() {
-        document.getElementById('creatorLeaveModal').style.display='none';
-        leaveCurrentGame();
-    }
-    function cancelCreatorLeave() {
-        document.getElementById('creatorLeaveModal').style.display='none';
-    }
-
-    // Модалка "session closed"
-    function showSessionClosedModal() {
-        const m = document.getElementById('sessionClosedModal');
-        m.style.display='block';
-        let sec = 5;
-        const timerSpan = document.getElementById('closeTimer');
-        const interval = setInterval(()=>{
-            sec--;
-            timerSpan.innerText=sec;
-            if(sec<=0) {
-                clearInterval(interval);
-                window.location.href="/online";
-            }
-        }, 1000);
-    }
-    function goToList() {
+    function leaveCurrentGame(){
+        const msg={gameId:gameId,nick:currentNick};
+        stompClient.send("/app/leave-game",{},JSON.stringify(msg));
         window.location.href="/online";
     }
 
-    //--- Timer for inactivity
-    function resetInactivityTimer() {
-        inactivitySecs = 120;
-        document.getElementById('inactivityTimer').innerText = inactivitySecs;
+    function askBeforeLeave(){
+        if(confirm("Вы уверены, что хотите выйти?")) leaveCurrentGame();
     }
-    function inactivityTick() {
-        inactivitySecs--;
-        document.getElementById('inactivityTimer').innerText = inactivitySecs;
-        if (inactivitySecs <= 0) {
-            // time's up => room closed
-            // same as handleLeaveGame => "CLOSED"?
-            alert("Время истекло, игра закрыта!");
-            window.location.href="/online";
-        }
+    function showCreatorLeaveModal(){
+        document.getElementById('creatorLeaveModal').style.display='block';
+    }
+    function confirmCreatorLeave(){
+        document.getElementById('creatorLeaveModal').style.display='none';
+        leaveCurrentGame();
+    }
+    function cancelCreatorLeave(){
+        document.getElementById('creatorLeaveModal').style.display='none';
     }
 
-    window.addEventListener('load', () => {
-        const params = new URLSearchParams(window.location.search);
-        gameId = params.get('gameId');
-        document.getElementById('gid').innerText = gameId;
+    function showSessionClosedModal(){
+        const m=document.getElementById('sessionClosedModal');
+        m.style.display='block';
+        let sec=5;
+        const tSpan=document.getElementById('closeTimer');
+        const interval=setInterval(()=>{
+            sec--;
+            tSpan.innerText=sec;
+            if(sec<=0){
+                clearInterval(interval);
+                goToList();
+            }
+        },1000);
+    }
+    function goToList(){
+        window.location.href="/online";
+    }
 
-        currentNick = document.getElementById('nick').innerText;
-
+    window.addEventListener('load',()=>{
+        const params=new URLSearchParams(window.location.search);
+        gameId=params.get('gameId');
+        document.getElementById('gid').innerText=gameId;
+        currentNick=document.getElementById('nick').innerText;
         connect();
-
-        // Запуск «тик» каждые 1 сек
-        inactivityInterval = setInterval(inactivityTick, 1000);
     });
 </script>
 </body>
