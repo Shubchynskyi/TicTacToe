@@ -1,3 +1,11 @@
+let crossOutAudioLocal = null;
+let lastComboStringLocal = null;
+
+window.addEventListener('load', ()=> {
+    crossOutAudioLocal = new Audio('/sounds/crossout.mp3');
+    refreshGameState();
+});
+
 async function refreshGameState() {
     const resp = await fetch('/game-state');
     if (resp.ok) {
@@ -17,27 +25,44 @@ async function makeMove(r, c) {
 }
 
 function updateBoard(game) {
-    // 1) убираем .winner-line
+    // 1) убираем winner-line
     for(let i=0;i<9;i++){
         const cellEl = document.getElementById('cell'+i);
         cellEl.classList.remove('winner-line');
-        // Заполняем X / O
+    }
+    // 2) заполняем X/O
+    for(let i=0;i<9;i++){
         if(game.board[i]==='CROSS'){
-            cellEl.innerText='X';
+            document.getElementById('cell'+i).innerText='X';
         } else if(game.board[i]==='NOUGHT'){
-            cellEl.innerText='O';
+            document.getElementById('cell'+i).innerText='O';
         } else {
-            cellEl.innerText='';
+            document.getElementById('cell'+i).innerText='';
         }
     }
-
-    // 2) Если game.winner!=='DRAW' и game.winningCombo!=null => подсветим
+    // 3) зачеркивание, если есть winningCombo и не ничья
     if(game.winner && game.winner!=='DRAW' && game.winningCombo){
-        // скажем, "звук" тоже можно
-        // document.getElementById('audioWin').play();
-        game.winningCombo.forEach(idx=>{
-            document.getElementById('cell'+idx).classList.add('winner-line');
-        });
+        const comboStr = JSON.stringify(game.winningCombo);
+        if(comboStr!==lastComboStringLocal){
+            // новая
+            game.winningCombo.forEach(idx=>{
+                document.getElementById('cell'+idx).classList.add('winner-line');
+            });
+            // звук 1 раз
+            if(crossOutAudioLocal){
+                crossOutAudioLocal.currentTime=0;
+                crossOutAudioLocal.play().catch(e=>console.log(e));
+            }
+            lastComboStringLocal = comboStr;
+        } else {
+            // та же combo => добавим .winner-line без звука
+            game.winningCombo.forEach(idx=>{
+                document.getElementById('cell'+idx).classList.add('winner-line');
+            });
+        }
+    } else {
+        // нет combo / ничья => сброс
+        lastComboStringLocal=null;
     }
 }
 
@@ -54,16 +79,17 @@ function updateStatus(game) {
         document.getElementById('scorePanel').style.display='none';
     }
 
-    if (game.gameOver) {
-        document.getElementById('restartBtn').innerText="Заново";
-        if (game.winner === 'DRAW') {
+    const btn = document.getElementById('restartBtn');
+    if(game.gameOver){
+        btn.innerText="Заново";
+        if(game.winner==='DRAW'){
             st.innerText='Ничья!';
         } else {
-            st.innerText='Победитель: ' + game.winner;
+            st.innerText='Победитель: '+game.winner;
         }
     } else {
-        document.getElementById('restartBtn').innerText="Рестарт";
-        st.innerText = 'Ход: ' + game.currentPlayer;
+        btn.innerText="Рестарт";
+        st.innerText='Ход: '+game.currentPlayer;
     }
 }
 
@@ -71,11 +97,9 @@ async function restartLocal() {
     const resp = await fetch('/restart-local');
     if (resp.ok) {
         const game = await resp.json();
+        lastComboStringLocal=null;
         updateBoard(game);
         updateStatus(game);
     }
 }
 
-window.addEventListener('load', ()=> {
-    refreshGameState();
-});
