@@ -243,11 +243,13 @@ function updateBoard(onlineGameObj) {
 
     // Смотрим, есть ли combo, и при этом не ничья
     const isDraw = (gameObj.winner==='DRAW');
-    if(onlineGameObj.winningCombo && !isDraw){
-        const comboStr=JSON.stringify(onlineGameObj.winningCombo);
+    const combo = onlineGameObj.game.winningCombo;
+    if(combo && !isDraw){
+        const comboStr=JSON.stringify(combo);
+        
         if(comboStr!==lastComboString){
             // новая линия
-            onlineGameObj.winningCombo.forEach(idx=>{
+            combo.forEach(idx=>{
                 document.getElementById('cell'+idx).classList.add('winner-line');
             });
             // звук один раз
@@ -258,7 +260,7 @@ function updateBoard(onlineGameObj) {
             lastComboString=comboStr;
         } else {
             // combo не изменился => просто добавим .winner-line (без звука)
-            onlineGameObj.winningCombo.forEach(idx=>{
+            combo.forEach(idx=>{
                 document.getElementById('cell'+idx).classList.add('winner-line');
             });
         }

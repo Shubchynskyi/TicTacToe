@@ -25,8 +25,6 @@ public class OnlineGame {
     private int scoreX;
     private int scoreO;
 
-    private int[] winningCombo;
-
     public OnlineGame() { }
 
     public OnlineGame(long gameId, String creatorId, String creatorDisplay) {
@@ -53,6 +51,5 @@ public class OnlineGame {
         this.winnerDisplay = null;
         this.scoreX = 0;
         this.scoreO = 0;
-        this.winningCombo = null;
     }
 }

@@ -89,9 +89,9 @@ public class OnlineGameService {
                 if (!"DRAW".equals(w)) {
                     // у вас в Game есть checkWinCombo()
                     int[] combo = checkWinCombo(g);
-                    og.setWinningCombo(combo);
+                    og.getGame().setWinningCombo(combo);
                 } else {
-                    og.setWinningCombo(null);
+                    og.getGame().setWinningCombo(null);
                 }
             }
         }
@@ -153,7 +153,7 @@ public class OnlineGameService {
             // 3) finished=false, winnerDisplay=null
             og.setFinished(false);
             og.setWinnerDisplay(null);
-            og.setWinningCombo(null);
+            og.getGame().setWinningCombo(null);
             // 4) waitingForSecondPlayer=true
             og.setWaitingForSecondPlayer(true);
 
@@ -174,7 +174,7 @@ public class OnlineGameService {
 
         og.setFinished(false);
         og.setWinnerDisplay(null);
-        og.setWinningCombo(null);
+        og.getGame().setWinningCombo(null);
 
         Game newG;
         boolean rX = (Math.random() < 0.5);
