@@ -7,5 +7,5 @@ import lombok.Setter;
 @Setter
 public class LeaveGameMessage {
     private long gameId;
-    private String nick;
+    private String userId;
 }

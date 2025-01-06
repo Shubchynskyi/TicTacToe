@@ -5,80 +5,18 @@
     <meta charset="UTF-8"/>
     <link rel="stylesheet"
           href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
-
-    <script>
-        async function refreshGameState() {
-            const resp = await fetch('/game-state');
-            if (resp.ok) {
-                const game = await resp.json();
-                updateBoard(game);
-                updateStatus(game);
-            }
+    <script th:src="@{/js/localGame.js}"></script>
+    <style>
+        .winner-line {
+            position: relative;
+            overflow: hidden;
+            animation: highlightWin 0.8s forwards ease-in-out;
         }
-
-        async function makeMove(r, c) {
-            const resp = await fetch(`/make-move?row=${r}&col=${c}`);
-            if (resp.ok) {
-                const game = await resp.json();
-                updateBoard(game);
-                updateStatus(game);
-            }
+        @keyframes highlightWin {
+            0%   { background-color: inherit; }
+            100% { background-color: #cfffcb; /* Зелёный оттенок */ }
         }
-
-        function updateBoard(game) {
-            // game.board = array of 9: CROSS, NOUGHT, EMPTY
-            for (let i = 0; i < 9; i++) {
-                const cellEl = document.getElementById('cell'+i);
-                if (game.board[i] === 'CROSS') {
-                    cellEl.innerText='X';
-                } else if (game.board[i] === 'NOUGHT') {
-                    cellEl.innerText='O';
-                } else {
-                    cellEl.innerText='';
-                }
-            }
-        }
-
-        function updateStatus(game) {
-            const st = document.getElementById('status');
-
-            // Если single -> показываем счёт, иначе скрываем
-            if (game.gameMode === 'single') {
-                document.getElementById('scorePanel').style.display='block';
-                document.getElementById('scoreHuman').innerText=game.scoreHuman;
-                document.getElementById('scoreAI').innerText=game.scoreAI;
-            } else {
-                // local (2 players) => не показываем счёт
-                document.getElementById('scorePanel').style.display='none';
-            }
-
-            if (game.gameOver) {
-                document.getElementById('restartBtn').innerText="Заново";
-                if (game.winner === 'DRAW') {
-                    st.innerText='Ничья!';
-                } else {
-                    st.innerText='Победитель: ' + game.winner;
-                }
-            } else {
-                document.getElementById('restartBtn').innerText="Рестарт";
-                st.innerText = 'Ход: ' + game.currentPlayer;
-            }
-        }
-
-        async function restartLocal() {
-            const resp = await fetch('/restart-local');
-            if (resp.ok) {
-                const game = await resp.json();
-                updateBoard(game);
-                updateStatus(game);
-            }
-        }
-
-        window.addEventListener('load', ()=> {
-            refreshGameState();
-        });
-    </script>
-
+    </style>
 </head>
 <body>
 <div class="container">
@@ -91,48 +29,38 @@
             <p>Счёт AI: <span id="scoreAI">0</span></p>
         </div>
 
-        <!-- Старый код поля -->
         <div style="margin-top:20px;">
             <div style="display:flex;">
-                <div id="cell0" class="box"
-                     style="width:60px;height:60px;font-size:24px;text-align:center;
-                    cursor:pointer;margin:2px;"
+                <div id="cell0" class="box" style="width:60px;height:60px;font-size:24px;
+                     text-align:center;cursor:pointer;margin:2px;"
                      onclick="makeMove(0,0)"></div>
-                <div id="cell1" class="box"
-                     style="width:60px;height:60px;font-size:24px;text-align:center;
-                    cursor:pointer;margin:2px;"
+                <div id="cell1" class="box" style="width:60px;height:60px;font-size:24px;
+                     text-align:center;cursor:pointer;margin:2px;"
                      onclick="makeMove(0,1)"></div>
-                <div id="cell2" class="box"
-                     style="width:60px;height:60px;font-size:24px;text-align:center;
-                    cursor:pointer;margin:2px;"
+                <div id="cell2" class="box" style="width:60px;height:60px;font-size:24px;
+                     text-align:center;cursor:pointer;margin:2px;"
                      onclick="makeMove(0,2)"></div>
             </div>
             <div style="display:flex;">
-                <div id="cell3" class="box"
-                     style="width:60px;height:60px;font-size:24px;text-align:center;
-                    cursor:pointer;margin:2px;"
+                <div id="cell3" class="box" style="width:60px;height:60px;font-size:24px;
+                     text-align:center;cursor:pointer;margin:2px;"
                      onclick="makeMove(1,0)"></div>
-                <div id="cell4" class="box"
-                     style="width:60px;height:60px;font-size:24px;text-align:center;
-                    cursor:pointer;margin:2px;"
+                <div id="cell4" class="box" style="width:60px;height:60px;font-size:24px;
+                     text-align:center;cursor:pointer;margin:2px;"
                      onclick="makeMove(1,1)"></div>
-                <div id="cell5" class="box"
-                     style="width:60px;height:60px;font-size:24px;text-align:center;
-                    cursor:pointer;margin:2px;"
+                <div id="cell5" class="box" style="width:60px;height:60px;font-size:24px;
+                     text-align:center;cursor:pointer;margin:2px;"
                      onclick="makeMove(1,2)"></div>
             </div>
             <div style="display:flex;">
-                <div id="cell6" class="box"
-                     style="width:60px;height:60px;font-size:24px;text-align:center;
-                    cursor:pointer;margin:2px;"
+                <div id="cell6" class="box" style="width:60px;height:60px;font-size:24px;
+                     text-align:center;cursor:pointer;margin:2px;"
                      onclick="makeMove(2,0)"></div>
-                <div id="cell7" class="box"
-                     style="width:60px;height:60px;font-size:24px;text-align:center;
-                    cursor:pointer;margin:2px;"
+                <div id="cell7" class="box" style="width:60px;height:60px;font-size:24px;
+                     text-align:center;cursor:pointer;margin:2px;"
                      onclick="makeMove(2,1)"></div>
-                <div id="cell8" class="box"
-                     style="width:60px;height:60px;font-size:24px;text-align:center;
-                    cursor:pointer;margin:2px;"
+                <div id="cell8" class="box" style="width:60px;height:60px;font-size:24px;
+                     text-align:center;cursor:pointer;margin:2px;"
                      onclick="makeMove(2,2)"></div>
             </div>
         </div>

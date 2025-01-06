@@ -8,89 +8,88 @@ import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 import java.util.List;
+import java.util.UUID;
 
 @Controller
 public class OnlineGameController {
 
     private final OnlineGameService service;
-    private final SimpMessagingTemplate messagingTemplate;
+    private final SimpMessagingTemplate msgTemplate;
 
     @Autowired
     public OnlineGameController(OnlineGameService service,
-                                SimpMessagingTemplate messagingTemplate) {
+                                SimpMessagingTemplate msgTemplate) {
         this.service = service;
-        this.messagingTemplate = messagingTemplate;
+        this.msgTemplate = msgTemplate;
     }
 
-    // Список игр (Thymeleaf)
     @GetMapping("/online")
     public String showOnlineGames(Model model, HttpSession session) {
         List<OnlineGame> games = service.listGames();
         model.addAttribute("games", games);
 
+        String userId = (String) session.getAttribute("userId");
+        if (userId == null) {
+            userId = UUID.randomUUID().toString();
+            session.setAttribute("userId", userId);
+        }
         String nick = (String) session.getAttribute("nick");
         if (nick == null) {
             nick = "Guest" + (System.currentTimeMillis() % 1000);
             session.setAttribute("nick", nick);
         }
-        model.addAttribute("nick", nick);
 
-        return "online"; // Thymeleaf template
+        model.addAttribute("nick", nick);
+        return "online";
     }
 
-    // Создать игру
     @PostMapping("/create-online")
     public String createOnline(HttpSession session) {
+        String userId = (String) session.getAttribute("userId");
         String nick = (String) session.getAttribute("nick");
+        if (userId == null) {
+            userId = UUID.randomUUID().toString();
+            session.setAttribute("userId", userId);
+        }
         if (nick == null) {
             nick = "Guest" + (System.currentTimeMillis() % 1000);
             session.setAttribute("nick", nick);
         }
-        // 1) Создаём игру => конструктор сразу ставит "playerX=creatorNick" или "playerO=creatorNick"
-        long gameId = service.createGame(nick);
-        service.joinGame(gameId, nick);
 
-        // 2) НЕ вызываем joinGame для создателя! Он уже внутри (X или O).
-        // 3) Запускаем 10-минутный таймер (так как пока 1 игрок).
-        service.startInactivityTimer(gameId, messagingTemplate, 10);
+        long gameId = service.createGame(userId, nick);
+        service.startInactivityTimer(gameId, msgTemplate, 10);
 
-        // 4) Рассылаем обновление списка
         broadcastGameList();
-
-        // 5) Сразу переходим на /onlineGame
         return "redirect:/onlineGame?gameId=" + gameId;
     }
 
     @GetMapping("/join-online")
     public String joinGame(@RequestParam("gameId") long gameId, HttpSession session) {
+        String userId = (String) session.getAttribute("userId");
         String nick = (String) session.getAttribute("nick");
-        if (nick == null) {
-            nick = "Guest" + (System.currentTimeMillis() % 1000);
-            session.setAttribute("nick", nick);
-        }
+        service.joinGame(gameId, userId, nick);
 
-        // 1) Присоединяем второго (если "waitingForSecondPlayer")
-        service.joinGame(gameId, nick);
-
-        // 2) Оповестим создателя, чтобы у него отобразился nick второго
+        // достаём og
         OnlineGame og = service.getOnlineGame(gameId);
-        if (og != null) {
-            messagingTemplate.convertAndSend("/topic/online-game-"+gameId, og);
-
-            // Если теперь 2 игрока => 3 мин, перезапустим таймер
-            if (!og.isFinished() && og.getPlayerX()!=null && og.getPlayerO()!=null) {
-                service.startInactivityTimer(gameId, messagingTemplate, 3);
+        if (og != null && !og.isFinished()) {
+            if (og.getPlayerXId() != null && og.getPlayerOId() != null) {
+                // 2 игрока => 3 мин
+                service.startInactivityTimer(gameId, msgTemplate, 3);
             }
+            // шлём обновлённое state
+            msgTemplate.convertAndSend("/topic/online-game-" + gameId, og);
         }
 
         broadcastGameList();
         return "redirect:/onlineGame?gameId=" + gameId;
     }
 
-    // Страница самой онлайн-игры
     @GetMapping("/onlineGame")
     public String onlineGamePage(@RequestParam("gameId") long gameId,
                                  Model model, HttpSession session) {
@@ -98,16 +97,19 @@ public class OnlineGameController {
         if (og == null) {
             return "redirect:/online";
         }
+        String userId = (String) session.getAttribute("userId");
         String nick = (String) session.getAttribute("nick");
+        if (userId == null) {
+            userId = UUID.randomUUID().toString();
+            session.setAttribute("userId", userId);
+        }
         if (nick == null) {
             nick = "Guest" + (System.currentTimeMillis() % 1000);
             session.setAttribute("nick", nick);
         }
-
-        // Если игра занята обоими, не даём 3-му
-        if (og.getPlayerX() != null && og.getPlayerO() != null) {
-            boolean isPlayer = nick.equals(og.getPlayerX())
-                    || nick.equals(og.getPlayerO());
+        if (!og.isWaitingForSecondPlayer()) {
+            boolean isPlayer = userId.equals(og.getPlayerXId())
+                    || userId.equals(og.getPlayerOId());
             if (!isPlayer) {
                 return "redirect:/online";
             }
@@ -118,50 +120,54 @@ public class OnlineGameController {
         return "onlineGame";
     }
 
-    // ============ WebSocket Endpoints ============
-
     @MessageMapping("/online-move")
     public void handleOnlineMove(OnlineGameMessage msg) {
-        service.makeMove(msg.getGameId(), msg.getNick(), msg.getRow(), msg.getCol());
+        service.makeMove(msg.getGameId(), msg.getUserId(), msg.getRow(), msg.getCol());
         OnlineGame og = service.getOnlineGame(msg.getGameId());
         if (og != null) {
-            messagingTemplate.convertAndSend("/topic/online-game-" + msg.getGameId(), og);
+            msgTemplate.convertAndSend("/topic/online-game-" + msg.getGameId(), og);
         }
     }
 
     @MessageMapping("/rematch")
     public void handleRematch(RematchMessage msg) {
-        long gameId = msg.getGameId();
-        OnlineGame og = service.rematchGame(gameId);
+        OnlineGame og = service.rematchGame(msg.getGameId());
         if (og != null) {
-            messagingTemplate.convertAndSend("/topic/online-game-" + gameId, og);
-
-            // Если 2 игрока => 3 min, иначе 10
-            if (og.getPlayerX() != null && og.getPlayerO() != null && !og.isFinished()) {
-                service.startInactivityTimer(gameId, messagingTemplate, 3);
+            msgTemplate.convertAndSend("/topic/online-game-" + msg.getGameId(), og);
+            if (og.getPlayerXId() != null && og.getPlayerOId() != null && !og.isFinished()) {
+                service.startInactivityTimer(msg.getGameId(), msgTemplate, 3);
             } else {
-                service.startInactivityTimer(gameId, messagingTemplate, 10);
+                service.startInactivityTimer(msg.getGameId(), msgTemplate, 10);
             }
         }
     }
 
     @MessageMapping("/leave-game")
     public void handleLeaveGame(LeaveGameMessage msg) {
-        boolean closed = service.leaveGame(msg.getGameId(), msg.getNick());
+        boolean closed = service.leaveGame(msg.getGameId(), msg.getUserId());
         broadcastGameList();
         if (closed) {
-            messagingTemplate.convertAndSend(
-                    "/topic/online-game-" + msg.getGameId(), "\"CLOSED\"");
+            msgTemplate.convertAndSend("/topic/online-game-" + msg.getGameId(), "\"CLOSED\"");
         } else {
             OnlineGame og = service.getOnlineGame(msg.getGameId());
             if (og != null) {
-                messagingTemplate.convertAndSend(
-                        "/topic/online-game-" + msg.getGameId(), og);
+                // шлём обновлённое состояние
+                msgTemplate.convertAndSend("/topic/online-game-" + msg.getGameId(), og);
+
+                // ========== ДОБАВЛЯЕМ ЛОГИКУ (1 игрок => 10 мин) ==========
+                // if "og.getPlayerXId()!=null ^ og.getPlayerOId()==null" или наоборот
+                // => 1 игрок => 10 мин
+                boolean onePlayerLeft =
+                        ( (og.getPlayerXId()!=null && og.getPlayerOId()==null)
+                                || (og.getPlayerXId()==null && og.getPlayerOId()!=null) );
+                if (!og.isFinished() && onePlayerLeft) {
+                    // Запускаем 10-минутный таймер
+                    service.startInactivityTimer(msg.getGameId(), msgTemplate, 10);
+                }
             }
         }
     }
 
-    // Для onlineGame.html: начальное состояние
     @GetMapping("/online-state")
     @ResponseBody
     public OnlineGame getOnlineState(@RequestParam("gameId") long gameId) {
@@ -169,7 +175,7 @@ public class OnlineGameController {
     }
 
     public void broadcastGameList() {
-        List<OnlineGame> allGames = service.listGames();
-        messagingTemplate.convertAndSend("/topic/game-list", allGames);
+        List<OnlineGame> all = service.listGames();
+        msgTemplate.convertAndSend("/topic/game-list", all);
     }
 }

@@ -9,11 +9,9 @@ import org.springframework.web.bind.annotation.RestController;
 public class NickController {
 
     @GetMapping("/update-nick")
-    public void updateNick(
-            @RequestParam("nick") String newNick,
-            HttpSession session
-    ) {
-        if(newNick != null && !newNick.isBlank()) {
+    public void updateNick(@RequestParam("nick") String newNick,
+                           HttpSession session) {
+        if (newNick != null && !newNick.isBlank()) {
             session.setAttribute("nick", newNick);
         }
     }

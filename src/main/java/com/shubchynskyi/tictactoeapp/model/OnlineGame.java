@@ -1,119 +1,58 @@
 package com.shubchynskyi.tictactoeapp.model;
 
+import lombok.Getter;
+import lombok.Setter;
 
+@Getter
+@Setter
 public class OnlineGame {
 
     private long gameId;
     private Game game;
-    private String playerX;
-    private String playerO;
+
+    private String playerXId;
+    private String playerOId;
+    private String playerXDisplay;
+    private String playerODisplay;
+
+    private String creatorId;
+    private String creatorDisplay;
+
     private boolean waitingForSecondPlayer;
     private boolean finished;
-    private String winnerNick;
+    private String winnerDisplay;
 
-    private int scoreX; // сколько побед у X
-    private int scoreO; // сколько побед у O
-    private String creatorNick;
+    private int scoreX;
+    private int scoreO;
 
-    public OnlineGame() {
-        // default
-    }
+    private int[] winningCombo;
 
-    public OnlineGame(long gameId, String creatorNick) {
+    public OnlineGame() { }
+
+    public OnlineGame(long gameId, String creatorId, String creatorDisplay) {
         this.gameId = gameId;
-        this.creatorNick = creatorNick; // <--- ADD
+        this.creatorId = creatorId;
+        this.creatorDisplay = creatorDisplay;
 
         boolean creatorIsX = (Math.random() < 0.5);
         if (creatorIsX) {
             this.game = new Game("online", "X", "easy");
-            this.playerX = creatorNick;
-            this.playerO = null;
+            this.playerXId = creatorId;
+            this.playerXDisplay = creatorDisplay;
+            this.playerOId = null;
+            this.playerODisplay = null;
         } else {
             this.game = new Game("online", "O", "easy");
-            this.playerX = null;
-            this.playerO = creatorNick;
+            this.playerXId = null;
+            this.playerXDisplay = null;
+            this.playerOId = creatorId;
+            this.playerODisplay = creatorDisplay;
         }
         this.waitingForSecondPlayer = true;
         this.finished = false;
-        this.winnerNick = null;
+        this.winnerDisplay = null;
         this.scoreX = 0;
         this.scoreO = 0;
-    }
-
-    // getters / setters
-    public long getGameId() {
-        return gameId;
-    }
-
-    public Game getGame() {
-        return game;
-    }
-
-    public String getPlayerX() {
-        return playerX;
-    }
-
-    public void setPlayerX(String px) {
-        playerX = px;
-    }
-
-    public String getPlayerO() {
-        return playerO;
-    }
-
-    public void setPlayerO(String po) {
-        playerO = po;
-    }
-
-    public boolean isWaitingForSecondPlayer() {
-        return waitingForSecondPlayer;
-    }
-
-    public void setWaitingForSecondPlayer(boolean w) {
-        waitingForSecondPlayer = w;
-    }
-
-    public boolean isFinished() {
-        return finished;
-    }
-
-    public void setFinished(boolean f) {
-        finished = f;
-    }
-
-    public String getWinnerNick() {
-        return winnerNick;
-    }
-
-    public void setWinnerNick(String w) {
-        winnerNick = w;
-    }
-
-    public int getScoreX() {
-        return scoreX;
-    }
-
-    public int getScoreO() {
-        return scoreO;
-    }
-
-    public void setScoreX(int sx) {
-        scoreX = sx;
-    }
-
-    public void setScoreO(int so) {
-        scoreO = so;
-    }
-
-    public void setGame(Game g) {
-        this.game = g;
-    }
-
-    public String getCreatorNick() {
-        return creatorNick;
-    }
-
-    public void setCreatorNick(String c) {
-        this.creatorNick = c;
+        this.winningCombo = null;
     }
 }

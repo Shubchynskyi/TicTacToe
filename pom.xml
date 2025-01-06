@@ -54,6 +54,14 @@
 <!--            <version>1.18.28</version>-->
             <scope>provided</scope>
         </dependency>
+
+        <!-- https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-devtools -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-devtools</artifactId>
+<!--            <version>3.4.1</version>-->
+        </dependency>
+
     </dependencies>
 
     <build>
