@@ -11,7 +11,7 @@ import java.util.Random;
  * God/Impossible difficulty - полный код, взятый
  * из вашего старого фрагмента (с приоритетами, уголками и т.д.).
  */
-public class GodDifficultyStrategy implements DifficultyStrategy {
+public class ImpossibleDifficultyStrategy implements DifficultyStrategy {
     private static final int FIELD_SIZE = 9;
     private static final int CENTER_CELL_INDEX = 4;
     private static final int[] PRIORITY_CELLS = {4, 0, 2, 6, 8};
@@ -54,11 +54,12 @@ public class GodDifficultyStrategy implements DifficultyStrategy {
         makePriorityMove(game);
     }
 
-    // ********** Старые методы **********
+
 
     private void makeFirstMoveIfAiSignCross(Game game) {
-        if (game.getAiSign() == Sign.CROSS) {
-            // random priority
+        if (game.getAiSign() == Sign.CROSS) { // TODO нужна ли проверка, если перед вызовом метода
+            // todo проверяется что все пустые? Может независимо от знака ставить знак в приоритетные?
+            // random priority todo может можно стримом выбрать незанятые и рандомно походить?
             List<Integer> cells = new ArrayList<>();
             for (int c: PRIORITY_CELLS) {
                 if (game.getSignAt(c) == Sign.EMPTY) {
@@ -91,7 +92,7 @@ public class GodDifficultyStrategy implements DifficultyStrategy {
 
     private void makeMoveAvoidingCorners(Game game) {
         List<Integer> moves = new ArrayList<>();
-        for (int c: NOT_CORNER_CELLS) {
+        for (int c: NOT_CORNER_CELLS) { // todo может можно стримом выбрать незанятые и рандомно походить?
             if (game.getSignAt(c) == Sign.EMPTY) {
                 moves.add(c);
             }
@@ -103,7 +104,7 @@ public class GodDifficultyStrategy implements DifficultyStrategy {
     }
 
     private int findWinningMove(Game game, Sign sign) {
-        for (int i=0; i<FIELD_SIZE; i++){
+        for (int i=0; i<FIELD_SIZE; i++){ // todo стрим?
             if (game.getSignAt(i) == Sign.EMPTY) {
                 game.setSignAt(i, sign);
                 if (game.isWin(sign)) {
@@ -117,14 +118,14 @@ public class GodDifficultyStrategy implements DifficultyStrategy {
     }
 
     private void makePriorityMove(Game game) {
-        // Center first
+        // Center first // todo будет метод вынесенный из хард?
         if (game.getSignAt(CENTER_CELL_INDEX)==Sign.EMPTY) {
             game.doMove(CENTER_CELL_INDEX);
             return;
         }
         // else corners
         List<Integer> cornerCells = new ArrayList<>();
-        for (int c: PRIORITY_CELLS) {
+        for (int c: PRIORITY_CELLS) { // todo стрим?
             if (game.getSignAt(c) == Sign.EMPTY) {
                 cornerCells.add(c);
             }

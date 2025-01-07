@@ -86,7 +86,7 @@ public class Game {
                 this.strategy = new HardDifficultyStrategy();
                 break;
             case "impossible":
-                this.strategy = new GodDifficultyStrategy();
+                this.strategy = new ImpossibleDifficultyStrategy();
                 break;
             case "easy":
             default:
