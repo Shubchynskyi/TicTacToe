@@ -66,11 +66,9 @@ public class Game {
 
         initStrategy();
 
-        // если игрок нолик, то AI ходит сразу
         if ("single".equalsIgnoreCase(this.gameMode)) {
             Sign aiSign = (this.playerSign == Sign.CROSS) ? Sign.NOUGHT : Sign.CROSS;
             if (aiSign == Sign.CROSS) {
-                // AI = X => ходит сразу
                 makeAiMoveIfNeeded();
             }
         }
@@ -88,7 +86,6 @@ public class Game {
             case "impossible":
                 this.strategy = new ImpossibleDifficultyStrategy();
                 break;
-            case "easy":
             default:
                 this.strategy = new EasyDifficultyStrategy();
         }
@@ -114,10 +111,9 @@ public class Game {
         if (!"single".equalsIgnoreCase(gameMode)) return;
         if (strategy == null) return;
 
-        // AI = противоположный playerSign
         Sign aiSign = (playerSign == Sign.CROSS) ? Sign.NOUGHT : Sign.CROSS;
         if (currentPlayer == aiSign) {
-            strategy.makeMove(this); // AI move
+            strategy.makeMove(this);
             checkWinOrDraw();
             if (!gameOver) {
                 switchPlayer();
@@ -132,14 +128,13 @@ public class Game {
 
     private void checkWinOrDraw() {
         if (gameOver) {
-            return; // <--- ADD: если уже gameOver, не считаем повторно
+            return;
         }
         Sign wSign = checkWinSign();
         if (wSign != Sign.EMPTY) {
             gameOver = true;
 
             if ("single".equalsIgnoreCase(gameMode)) {
-                // Прибавляем счёт только для single (в local режиме — нет ИИ)
                 if (wSign == playerSign) {
                     scoreHuman++;
                 } else {

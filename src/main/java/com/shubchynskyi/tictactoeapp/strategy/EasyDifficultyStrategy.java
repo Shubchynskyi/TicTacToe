@@ -2,9 +2,7 @@ package com.shubchynskyi.tictactoeapp.strategy;
 
 import java.util.List;
 
-/**
- * Easy - делает вообще случайный ход из пустых клеток.
- */
+
 public class EasyDifficultyStrategy extends AbstractDifficultyStrategy {
     private final List<StrategyStep> steps;
 

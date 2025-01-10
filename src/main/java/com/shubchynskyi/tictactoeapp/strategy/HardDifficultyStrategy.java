@@ -12,7 +12,7 @@ public class HardDifficultyStrategy extends AbstractDifficultyStrategy {
         this.steps = List.of(
                 this::tryToWin,
                 this::tryToBlockPlayer,
-                this::tryPutSignInCenter,
+                this::tryToPutSignInCenter,
                 this::doRandomMove
         );
     }
