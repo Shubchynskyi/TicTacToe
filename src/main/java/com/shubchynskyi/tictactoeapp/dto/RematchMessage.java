@@ -1,4 +1,4 @@
-package com.shubchynskyi.tictactoeapp.controller;
+package com.shubchynskyi.tictactoeapp.dto;
 
 
 import lombok.Getter;

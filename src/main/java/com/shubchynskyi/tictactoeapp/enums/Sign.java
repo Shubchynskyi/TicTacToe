@@ -1,5 +1,8 @@
-package com.shubchynskyi.tictactoeapp.entity;
+package com.shubchynskyi.tictactoeapp.enums;
 
+import lombok.Getter;
+
+@Getter
 public enum Sign {
     EMPTY(' '),
     CROSS('X'),
@@ -11,7 +14,4 @@ public enum Sign {
         this.sign = sign;
     }
 
-    public char getSign() {
-        return sign;
-    }
 }

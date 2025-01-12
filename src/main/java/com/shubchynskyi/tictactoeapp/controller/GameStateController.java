@@ -1,24 +1,31 @@
 package com.shubchynskyi.tictactoeapp.controller;
 
 
-import com.shubchynskyi.tictactoeapp.model.Game;
+import com.shubchynskyi.tictactoeapp.constants.Key;
+import com.shubchynskyi.tictactoeapp.constants.Route;
+import com.shubchynskyi.tictactoeapp.domain.Game;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-/**
- * Возвращает текущее состояние localGame (JSON) при GET "/game-state"
- */
+
 @RestController
 public class GameStateController {
 
-    @GetMapping("/game-state")
+    @GetMapping(Route.GAME_STATE)
     public Game getLocalGameState(HttpSession session) {
-        Game game = (Game) session.getAttribute("localGame");
+        return retrieveLocalGameFromSession(session);
+    }
+
+    private Game retrieveLocalGameFromSession(HttpSession session) {
+        Game game = (Game) session.getAttribute(Key.LOCAL_GAME);
         if (game == null) {
-            // вернуть пустой Game, чтобы JSON не упал
-            return new Game();
+            return createDefaultGame();
         }
         return game;
+    }
+
+    private Game createDefaultGame() {
+        return new Game();
     }
 }

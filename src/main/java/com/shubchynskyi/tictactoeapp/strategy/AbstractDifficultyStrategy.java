@@ -1,44 +1,40 @@
 package com.shubchynskyi.tictactoeapp.strategy;
 
-import com.shubchynskyi.tictactoeapp.entity.Sign;
-import com.shubchynskyi.tictactoeapp.model.Game;
+import com.shubchynskyi.tictactoeapp.enums.Sign;
+import com.shubchynskyi.tictactoeapp.domain.Game;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public abstract class AbstractDifficultyStrategy implements DifficultyStrategy {
 
     private static final int FIELD_SIZE = 9;
-    private static final int[] PRIORITY_CELLS = {4, 0, 2, 6, 8};
+    private static final List<Integer> PRIORITY_CELLS = List.of(4, 0, 2, 6, 8);
     private static final int CENTER_CELL_INDEX = 4;
-    private static final int[] CORNER_CELLS = {0, 2, 6, 8};
-    private static final int[] NOT_CORNER_CELLS = {1, 3, 5, 7};
+    private static final List<Integer> CORNER_CELLS = List.of(0, 2, 6, 8);
+    private static final List<Integer> NOT_CORNER_CELLS = List.of(1, 3, 5, 7);
     private static final int EMPTY_SIZE_FOR_CORNER_TRAP = 6; // special logic
 
+    private final Random random = new Random();
     @Override
     public final void makeMove(Game game) {
         for (StrategyStep step : getSteps()) {
-            boolean done = step.doStep(game);
-            if (done) break;
+            if (step.doStep(game)) {
+                break; // Завершаем, если шаг выполнен успешно
+            }
         }
     }
 
     protected abstract List<StrategyStep> getSteps();
 
     protected boolean doRandomMove(Game game) {
-        List<Integer> empties = getEmptyCells(game);
-        if (!empties.isEmpty()) {
-            int cell = empties.get(new Random().nextInt(empties.size()));
-            game.doMove(cell);
-            return true;
-        }
-        return false;
+        return placeRandomMove(game, getEmptyCells(game));
     }
 
     protected boolean tryToPutSignInCenter(Game game) {
-        if (game.getSignAt(CENTER_CELL_INDEX) == Sign.EMPTY) {
+        if (isCellEmpty(game, CENTER_CELL_INDEX)) {
             game.doMove(CENTER_CELL_INDEX);
             return true;
         }
@@ -46,105 +42,94 @@ public abstract class AbstractDifficultyStrategy implements DifficultyStrategy {
     }
 
     protected boolean tryToBlockPlayer(Game game) {
-        int blockCell = findWinningCell(game, game.getPlayerSign());
-        if (blockCell != -1) {
-            game.doMove(blockCell);
-            return true;
-        }
-        return false;
+        return tryToCompleteLine(game, game.getPlayerSign());
     }
 
     protected boolean tryToWin(Game game) {
-        int winCell = findWinningCell(game, game.getAiSign());
-        if (winCell != -1) {
-            game.doMove(winCell);
-            return true;
-        }
-        return false;
+        return tryToCompleteLine(game, game.getAiSign());
     }
 
     protected boolean tryToPriorityCell(Game game) {
         int emptySize = getEmptyCells(game).size();
-
         if (emptySize == FIELD_SIZE - 1) {
             return tryToPutSignInCenter(game) || tryToPutToPriorityCell(game, CORNER_CELLS);
         }
-
         return tryToPutToPriorityCell(game, PRIORITY_CELLS);
     }
 
-    private boolean tryToPutToPriorityCell(Game game, int[] cellsWantToMove) {
-        List<Integer> availableCells = new ArrayList<>();
-        for (int cell : cellsWantToMove) {
-            if (game.getSignAt(cell) == Sign.EMPTY) {
-                availableCells.add(cell);
-            }
+    protected boolean tryToAvoidCornerTrap(Game game) {
+        if (getEmptyCells(game).size() == EMPTY_SIZE_FOR_CORNER_TRAP &&
+                isPlayerInOppositeCorners(game) &&
+                isAiInCenterCell(game)) {
+            return tryToPutToPriorityCell(game, NOT_CORNER_CELLS);
         }
-        if (!availableCells.isEmpty()) {
-            int cell = availableCells.get(new Random().nextInt(availableCells.size()));
-            game.doMove(cell);
+        return false;
+    }
+
+    private boolean tryToCompleteLine(Game game, Sign sign) {
+        int cellIndex = findWinningCell(game, sign);
+        if (cellIndex != -1) {
+            game.doMove(cellIndex);
             return true;
         }
         return false;
     }
 
-    protected boolean tryToAvoidCornerTrap(Game game) {
-        List<Integer> emptyCells = getEmptyCells(game);
-        if (emptyCells.size() == EMPTY_SIZE_FOR_CORNER_TRAP) {
-            if (isPlayerInOppositeCorners(game) && isAiInCenterCell(game)) {
-                makeMoveAvoidingCorners(game);
-                return true;
-            }
+    private boolean tryToPutToPriorityCell(Game game, List<Integer> cells) {
+        List<Integer> availableCells = filterEmptyCells(game, cells);
+        return placeRandomMove(game, availableCells);
+    }
+
+    private boolean placeRandomMove(Game game, List<Integer> availableCells) {
+        if (!availableCells.isEmpty()) {
+            int randomCell = availableCells.get(random.nextInt(availableCells.size()));
+            game.doMove(randomCell);
+            return true;
         }
         return false;
+    }
+
+    private List<Integer> filterEmptyCells(Game game, List<Integer> cells) {
+        return cells.stream()
+                .filter(cell -> isCellEmpty(game, cell))
+                .collect(Collectors.toList());
     }
 
     private boolean isPlayerInOppositeCorners(Game game) {
         Sign playerSign = game.getPlayerSign();
-        if (game.getSignAt(0) == playerSign && game.getSignAt(8) == playerSign) return true;
-        if (game.getSignAt(2) == playerSign && game.getSignAt(6) == playerSign) return true;
-        return false;
+        return (isCellSign(game, 0, playerSign) && isCellSign(game, 8, playerSign)) ||
+                (isCellSign(game, 2, playerSign) && isCellSign(game, 6, playerSign));
     }
 
     private boolean isAiInCenterCell(Game game) {
-        return game.getSignAt(CENTER_CELL_INDEX) == game.getAiSign();
-    }
-
-    private void makeMoveAvoidingCorners(Game game) {
-        List<Integer> moves = new ArrayList<>();
-        for (int c : NOT_CORNER_CELLS) {
-            if (game.getSignAt(c) == Sign.EMPTY) {
-                moves.add(c);
-            }
-        }
-        if (!moves.isEmpty()) {
-            int cell = moves.get(new Random().nextInt(moves.size()));
-            game.doMove(cell);
-        }
+        return isCellSign(game, CENTER_CELL_INDEX, game.getAiSign());
     }
 
     private int findWinningCell(Game game, Sign sign) {
-        for (int i = 0; i < 9; i++) {
-            if (game.getSignAt(i) == Sign.EMPTY) {
-                game.setSignAt(i, sign);
-                if (game.isWin(sign)) {
+        return IntStream.range(0, FIELD_SIZE)
+                .filter(i -> isCellEmpty(game, i))
+                .filter(i -> {
+                    game.setSignAt(i, sign);
+                    boolean isWinning = game.isWin(sign);
                     game.setSignAt(i, Sign.EMPTY);
-                    return i;
-                }
-                game.setSignAt(i, Sign.EMPTY);
-            }
-        }
-        return -1;
+                    return isWinning;
+                })
+                .findFirst()
+                .orElse(-1);
     }
 
     private List<Integer> getEmptyCells(Game game) {
-        List<Integer> list = new ArrayList<>();
-        for (int i = 0; i < 9; i++) {
-            if (game.getSignAt(i) == Sign.EMPTY) {
-                list.add(i);
-            }
-        }
-        return list;
+        return IntStream.range(0, FIELD_SIZE)
+                .filter(i -> isCellEmpty(game, i))
+                .boxed()
+                .collect(Collectors.toList());
     }
 
+    private boolean isCellEmpty(Game game, int cell) {
+        return game.getSignAt(cell) == Sign.EMPTY;
+    }
+
+    private boolean isCellSign(Game game, int cell, Sign sign) {
+        return game.getSignAt(cell) == sign;
+    }
 }

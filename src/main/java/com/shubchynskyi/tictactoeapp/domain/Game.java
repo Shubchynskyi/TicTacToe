@@ -1,17 +1,14 @@
-package com.shubchynskyi.tictactoeapp.model;
+package com.shubchynskyi.tictactoeapp.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.shubchynskyi.tictactoeapp.entity.Sign;
+import com.shubchynskyi.tictactoeapp.enums.Sign;
 import com.shubchynskyi.tictactoeapp.strategy.*;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.util.Arrays;
 
-/**
- * Локальная игра (одиночная или "local" на одном экране).
- * Хранит 3×3 поле, режим (single/local), символ игрока (playerSign), сложность.
- */
+
 @Getter
 @Setter
 public class Game {

@@ -1,4 +1,4 @@
-package com.shubchynskyi.tictactoeapp.model;
+package com.shubchynskyi.tictactoeapp.domain;
 
 import lombok.Getter;
 import lombok.Setter;

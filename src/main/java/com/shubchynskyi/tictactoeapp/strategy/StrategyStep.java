@@ -1,6 +1,6 @@
 package com.shubchynskyi.tictactoeapp.strategy;
 
-import com.shubchynskyi.tictactoeapp.model.Game;
+import com.shubchynskyi.tictactoeapp.domain.Game;
 
 @FunctionalInterface
 public interface StrategyStep {

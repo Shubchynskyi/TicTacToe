@@ -1,8 +1,9 @@
 package com.shubchynskyi.tictactoeapp.service;
 
-import com.shubchynskyi.tictactoeapp.entity.Sign;
-import com.shubchynskyi.tictactoeapp.model.Game;
-import com.shubchynskyi.tictactoeapp.model.OnlineGame;
+import com.shubchynskyi.tictactoeapp.domain.Game;
+import com.shubchynskyi.tictactoeapp.domain.OnlineGame;
+import com.shubchynskyi.tictactoeapp.enums.Sign;
+import jakarta.annotation.PostConstruct;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
@@ -18,14 +19,69 @@ public class OnlineGameService {
     private final ConcurrentHashMap<Long, OnlineGame> games = new ConcurrentHashMap<>();
     private final AtomicLong idGen = new AtomicLong(1000);
 
-    private final Map<Long, ScheduledFuture<?>> gameTimers = new ConcurrentHashMap<>();
+    // Вместо одного ScheduledFuture храним "пару" задач для каждой игры
+    private final Map<Long, TimerHandles> gameTimers = new ConcurrentHashMap<>();
+
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
+    // ---------------------------
+    //  Вспомогательный класс
+    // ---------------------------
+    private static class TimerHandles {
+        private final ScheduledFuture<?> warningFuture;
+        private final ScheduledFuture<?> closeFuture;
+
+        public TimerHandles(ScheduledFuture<?> warningFuture, ScheduledFuture<?> closeFuture) {
+            this.warningFuture = warningFuture;
+            this.closeFuture = closeFuture;
+        }
+
+        public void cancelAll(boolean mayInterruptIfRunning) {
+            if (warningFuture != null) {
+                warningFuture.cancel(mayInterruptIfRunning);
+            }
+            if (closeFuture != null) {
+                closeFuture.cancel(mayInterruptIfRunning);
+            }
+        }
+    }
+
+    // -----------------------------------------------------------
+    //  Пример: метод для периодического логирования
+    // -----------------------------------------------------------
+    public void startPeriodicLogging(int periodInSeconds) {
+        Runnable logTask = () -> {
+            try {
+                List<OnlineGame> currentGames = listGames();
+                System.err.println("=== Current online games (" + currentGames.size() + ") ===");
+                for (OnlineGame g : currentGames) {
+                    System.err.println(g);
+                }
+                System.err.println("==============================================");
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        };
+
+        // Запускаем задачу в отдельном потоке с периодом periodInSeconds
+        scheduler.scheduleAtFixedRate(logTask, 0, periodInSeconds, TimeUnit.SECONDS);
+    }
+
+    @PostConstruct
+    public void initLogging() {
+        // Допустим, хотим логировать каждые 10 секунд
+        startPeriodicLogging(10);
+    }
+
+    // -----------------------------------------------------------
+    //  Методы CRUD и логика игры
+    // -----------------------------------------------------------
+
     public long createGame(String userId, String displayName) {
-        long gid = idGen.incrementAndGet();
-        OnlineGame og = new OnlineGame(gid, userId, displayName);
-        games.put(gid, og);
-        return gid;
+        long gameId = idGen.incrementAndGet();
+        OnlineGame onlineGame = new OnlineGame(gameId, userId, displayName);
+        games.put(gameId, onlineGame);
+        return gameId;
     }
 
     public OnlineGame getOnlineGame(long gameId) {
@@ -36,213 +92,226 @@ public class OnlineGameService {
         return new ArrayList<>(games.values());
     }
 
-    public OnlineGame joinGame(long gameId, String userId, String displayName) {
-        OnlineGame og = games.get(gameId);
-        if (og != null && og.isWaitingForSecondPlayer()) {
-            if (og.getPlayerXId() == null) {
-                og.setPlayerXId(userId);
-                og.setPlayerXDisplay(displayName);
-            } else if (og.getPlayerOId() == null) {
-                og.setPlayerOId(userId);
-                og.setPlayerODisplay(displayName);
-            }
-            og.setWaitingForSecondPlayer(false);
+    public void joinGame(long gameId, String userId, String displayName) {
+        OnlineGame onlineGame = games.get(gameId);
+        if (onlineGame != null && onlineGame.isWaitingForSecondPlayer()) {
+            assignPlayer(onlineGame, userId, displayName);
+            onlineGame.setWaitingForSecondPlayer(false);
         }
-        return og;
     }
 
-    public OnlineGame makeMove(long gameId, String userId, int row, int col) {
-        OnlineGame og = games.get(gameId);
-        if (og == null || og.isFinished()) {
-            return null;
+    public void makeMove(long gameId, String userId, int row, int col) {
+        OnlineGame onlineGame = games.get(gameId);
+        if (onlineGame == null || onlineGame.isFinished()) {
+            return;
         }
-        Game g = og.getGame();
-        if (!g.isGameOver()) {
-            // 1. Проверяем, кто ходит
-            String cur = g.getCurrentPlayer(); // "X" или "O"
 
-            // 2. Сопоставляем userId => XId/OId
-            if ("X".equals(cur) && userId.equals(og.getPlayerXId())) {
-                g.makeMove(row, col);
-            } else if ("O".equals(cur) && userId.equals(og.getPlayerOId())) {
-                g.makeMove(row, col);
+        Game game = onlineGame.getGame();
+        if (!game.isGameOver()) {
+            if (isValidMove(onlineGame, userId)) {
+                game.makeMove(row, col);
             }
 
-            // 3. Если теперь игра окончена => смотрим победителя
-            if (g.isGameOver()) {
-                og.setFinished(true);
-
-                // (A) Проверяем winner
-                String w = g.getWinner(); // "X", "O" или "DRAW"
-                if ("DRAW".equals(w)) {
-                    og.setWinnerDisplay("DRAW");
-                } else if ("X".equals(w)) {
-                    og.setWinnerDisplay(og.getPlayerXDisplay());
-                    og.setScoreX(og.getScoreX() + 1);
-                } else if ("O".equals(w)) {
-                    og.setWinnerDisplay(og.getPlayerODisplay());
-                    og.setScoreO(og.getScoreO() + 1);
-                }
-
-                // (B) Найдём выигрышную комбинацию (три клетки)
-                //     если "DRAW", combo=null
-                if (!"DRAW".equals(w)) {
-                    // у вас в Game есть checkWinCombo()
-                    int[] combo = checkWinCombo(g);
-                    og.getGame().setWinningCombo(combo);
-                } else {
-                    og.getGame().setWinningCombo(null);
-                }
+            if (game.isGameOver()) {
+                handleGameOver(onlineGame, game);
             }
         }
-        return og;
-    }
-
-    // Дополнительный метод в сервисе — найти 3 клетки, используя вашу Game:
-    private int[] checkWinCombo(Game g) {
-        // используем тот же массив combos:
-        int[][] combos = {
-                {0,1,2},{3,4,5},{6,7,8},
-                {0,3,6},{1,4,7},{2,5,8},
-                {0,4,8},{2,4,6}
-        };
-        for (int[] c : combos) {
-            if (g.getSignAt(c[0]) != Sign.EMPTY
-                    && g.getSignAt(c[0]) == g.getSignAt(c[1])
-                    && g.getSignAt(c[1]) == g.getSignAt(c[2])) {
-                return c; // первая найденная тройка
-            }
-        }
-        return null; // нет 3 в ряд
     }
 
     public boolean leaveGame(long gameId, String userId) {
-        OnlineGame og = games.get(gameId);
-
-        if (og != null) {
-
-            // Если уходит создатель => удаляем игру
-            if (og.getCreatorId() != null && og.getCreatorId().equals(userId)) {
-                games.remove(gameId);  // всё, игры нет
-                return true;           // closed
-            }
-
-            // Уходит X или O?
-            boolean wasX = (og.getPlayerXId() != null && og.getPlayerXId().equals(userId));
-            boolean wasO = (og.getPlayerOId() != null && og.getPlayerOId().equals(userId));
-            if (wasX) {
-                og.setPlayerXId(null);
-                og.setPlayerXDisplay(null);
-            } else if (wasO) {
-                og.setPlayerOId(null);
-                og.setPlayerODisplay(null);
-            }
-
-            // Если теперь 0 игроков => удаляем
-            if (og.getPlayerXId() == null && og.getPlayerOId() == null) {
+        OnlineGame onlineGame = games.get(gameId);
+        if (onlineGame != null) {
+            // Если вышел создатель, удаляем игру целиком
+            if (userId.equals(onlineGame.getCreatorId())) {
                 games.remove(gameId);
-                return true; // closed
+                stopTimerForGame(gameId); // Останавливаем таймеры
+                return true;
             }
 
-            // Иначе остался 1 игрок
-            // 1) сбрасываем поле
-            og.getGame().resetBoard();
-            // 2) сбрасываем счёт
-            og.setScoreX(0);
-            og.setScoreO(0);
-            // 3) finished=false, winnerDisplay=null
-            og.setFinished(false);
-            og.setWinnerDisplay(null);
-            og.getGame().setWinningCombo(null);
-            // 4) waitingForSecondPlayer=true
-            og.setWaitingForSecondPlayer(true);
-
-            // Возвращаем false => не закрыли игру
-            return false;
+            // Если вышел второй игрок, освобождаем его слот
+            boolean playerLeft = removePlayer(onlineGame, userId);
+            if (playerLeft) {
+                // Сбрасываем игру, возвращаем в состояние ожидания
+                resetGame(onlineGame);
+                onlineGame.setWaitingForSecondPlayer(true);
+                // Таймер можно перезапустить, если хотите дать время на повторное подключение
+                return false;
+            }
         }
         return false;
     }
 
     public void deleteGame(long gameId) {
         games.remove(gameId);
+        stopTimerForGame(gameId); // При удалении игры также останавливаем таймер
     }
 
     public OnlineGame rematchGame(long gameId) {
-        OnlineGame og = games.get(gameId);
-        if (og == null) return null;
-        if (!og.isFinished()) return og;
-
-        og.setFinished(false);
-        og.setWinnerDisplay(null);
-        og.getGame().setWinningCombo(null);
-
-        Game newG;
-        boolean rX = (Math.random() < 0.5);
-        if (rX) {
-            newG = new Game("online", "X", "easy");
-        } else {
-            newG = new Game("online", "O", "easy");
-            String oldXId = og.getPlayerXId();
-            String oldXDisp = og.getPlayerXDisplay();
-            og.setPlayerXId(og.getPlayerOId());
-            og.setPlayerXDisplay(og.getPlayerODisplay());
-            og.setPlayerOId(oldXId);
-            og.setPlayerODisplay(oldXDisp);
-
-            int tmpScore = og.getScoreX();
-            og.setScoreX(og.getScoreO());
-            og.setScoreO(tmpScore);
+        OnlineGame onlineGame = games.get(gameId);
+        if (onlineGame == null || !onlineGame.isFinished()) {
+            return onlineGame;
         }
-        og.setGame(newG);
-        og.setWaitingForSecondPlayer(og.getPlayerXId() == null || og.getPlayerOId() == null);
-        return og;
+
+        resetGameWithoutScores(onlineGame);
+        switchPlayers(onlineGame);
+        onlineGame.setWaitingForSecondPlayer(
+                onlineGame.getPlayerXId() == null || onlineGame.getPlayerOId() == null
+        );
+        return onlineGame;
     }
 
+    // -----------------------------------------------------------
+    //  Таймеры
+    // -----------------------------------------------------------
+
+    // Метод остановки (отмены) таймеров для игры
     public void stopTimerForGame(long gameId) {
-        ScheduledFuture<?> future = gameTimers.remove(gameId);
-        if (future != null) {
-            future.cancel(true);
+        TimerHandles handles = gameTimers.remove(gameId);
+        if (handles != null) {
+            handles.cancelAll(true);
         }
     }
 
-    public void startInactivityTimer(long gameId,
-                                     SimpMessagingTemplate msgTemplate,
-                                     int minutes) {
-        // (1) ОСТАНОВКА СТАРОГО ТАЙМЕРА, если есть
+    /**
+     * Запускаем два таймера:
+     * 1. warningFuture — за 30 секунд до конца отправляет "TIMELEFT_30"
+     * 2. closeFuture   — по окончании времени закрывает игру
+     */
+    public void startInactivityTimer(long gameId, SimpMessagingTemplate msgTemplate, int minutes) {
+        // Сначала отменяем старые, если были
         stopTimerForGame(gameId);
 
-        // (2) Запускаем новый async
-        ScheduledFuture<?> future = scheduler.schedule(() -> {
-            try {
-                // Спим (minutes*60 - 30) => TIMELEFT_30
-                long half = (minutes * 60L - 30) * 1000L;
-                if (half < 0) half = 0;
-                Thread.sleep(half);
+        long totalSeconds = minutes * 60L;
+        long warningSeconds = Math.max(totalSeconds - 30, 0);
 
-                OnlineGame og = getOnlineGame(gameId);
-                if (og != null && !og.isFinished()) {
-                    msgTemplate.convertAndSend(
-                            "/topic/online-game-" + gameId, "\"TIMELEFT_30\"");
-                }
-
-                // Спим ещё 30 сек => CLOSED
-                Thread.sleep(30_000L);
-                og = getOnlineGame(gameId);
-                if (og != null && !og.isFinished()) {
-                    og.setFinished(true);
-                    deleteGame(gameId);
-                    msgTemplate.convertAndSend(
-                            "/topic/online-game-" + gameId, "\"CLOSED\"");
-                    // ОБНОВИМ список
-                    msgTemplate.convertAndSend("/topic/game-list", listGames());
-                }
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
+        // 1) Запланировать оповещение за 30 секунд до конца
+        ScheduledFuture<?> warningFuture = scheduler.schedule(() -> {
+            OnlineGame onlineGame = getOnlineGame(gameId);
+            if (onlineGame != null && !onlineGame.isFinished()) {
+                msgTemplate.convertAndSend("/topic/online-game-" + gameId, "\"TIMELEFT_30\"");
             }
-        }, 0, TimeUnit.MILLISECONDS);
+        }, warningSeconds, TimeUnit.SECONDS);
 
-        // (3) Сохраняем future, чтобы потом отменить
-        gameTimers.put(gameId, future);
+        // 2) Запланировать фактическое закрытие игры
+        ScheduledFuture<?> closeFuture = scheduler.schedule(() -> {
+            OnlineGame onlineGame = getOnlineGame(gameId);
+            if (onlineGame != null && !onlineGame.isFinished()) {
+                onlineGame.setFinished(true);
+                deleteGame(gameId); // удаляем саму игру и отменяем таймеры
+                msgTemplate.convertAndSend("/topic/online-game-" + gameId, "\"CLOSED\"");
+                // Не забудьте оповестить список игр:
+                msgTemplate.convertAndSend("/topic/game-list", listGames());
+            }
+        }, totalSeconds, TimeUnit.SECONDS);
+
+        // Сохраняем обе задачи в Map
+        gameTimers.put(gameId, new TimerHandles(warningFuture, closeFuture));
     }
 
+    // -----------------------------------------------------------
+    //  Вспомогательные методы
+    // -----------------------------------------------------------
+
+    private void assignPlayer(OnlineGame onlineGame, String userId, String displayName) {
+        if (onlineGame.getPlayerXId() == null) {
+            onlineGame.setPlayerXId(userId);
+            onlineGame.setPlayerXDisplay(displayName);
+        } else if (onlineGame.getPlayerOId() == null) {
+            onlineGame.setPlayerOId(userId);
+            onlineGame.setPlayerODisplay(displayName);
+        }
+    }
+
+    private boolean isValidMove(OnlineGame onlineGame, String userId) {
+        Game game = onlineGame.getGame();
+        String currentPlayer = game.getCurrentPlayer();
+        return ("X".equals(currentPlayer) && userId.equals(onlineGame.getPlayerXId()))
+                || ("O".equals(currentPlayer) && userId.equals(onlineGame.getPlayerOId()));
+    }
+
+    private void handleGameOver(OnlineGame onlineGame, Game game) {
+        onlineGame.setFinished(true);
+        String winner = game.getWinner();
+        onlineGame.setWinnerDisplay(getWinnerDisplay(winner, onlineGame));
+        updateScores(onlineGame, winner);
+        int[] winningCombo = checkWinCombo(game);
+        onlineGame.getGame().setWinningCombo(winningCombo);
+    }
+
+    private String getWinnerDisplay(String winner, OnlineGame onlineGame) {
+        if ("DRAW".equals(winner)) {
+            return "DRAW";
+        } else if ("X".equals(winner)) {
+            return onlineGame.getPlayerXDisplay();
+        } else {
+            return onlineGame.getPlayerODisplay();
+        }
+    }
+
+    private void updateScores(OnlineGame onlineGame, String winner) {
+        if ("X".equals(winner)) {
+            onlineGame.setScoreX(onlineGame.getScoreX() + 1);
+        } else if ("O".equals(winner)) {
+            onlineGame.setScoreO(onlineGame.getScoreO() + 1);
+        }
+    }
+
+    private boolean removePlayer(OnlineGame onlineGame, String userId) {
+        if (userId.equals(onlineGame.getPlayerXId())) {
+            onlineGame.setPlayerXId(null);
+            onlineGame.setPlayerXDisplay(null);
+            return true;
+        } else if (userId.equals(onlineGame.getPlayerOId())) {
+            onlineGame.setPlayerOId(null);
+            onlineGame.setPlayerODisplay(null);
+            return true;
+        }
+        return false;
+    }
+
+    private void resetGame(OnlineGame onlineGame) {
+        onlineGame.getGame().resetBoard();
+        onlineGame.setScoreX(0);
+        onlineGame.setScoreO(0);
+        onlineGame.setFinished(false);
+        onlineGame.setWinnerDisplay(null);
+        onlineGame.getGame().setWinningCombo(null);
+    }
+
+    private void resetGameWithoutScores(OnlineGame onlineGame) {
+        onlineGame.getGame().resetBoard();
+        onlineGame.setFinished(false);
+        onlineGame.setWinnerDisplay(null);
+        onlineGame.getGame().setWinningCombo(null);
+    }
+
+    private void switchPlayers(OnlineGame onlineGame) {
+        String tempId = onlineGame.getPlayerXId();
+        String tempDisplay = onlineGame.getPlayerXDisplay();
+
+        onlineGame.setPlayerXId(onlineGame.getPlayerOId());
+        onlineGame.setPlayerXDisplay(onlineGame.getPlayerODisplay());
+        onlineGame.setPlayerOId(tempId);
+        onlineGame.setPlayerODisplay(tempDisplay);
+
+        int tempScore = onlineGame.getScoreX();
+        onlineGame.setScoreX(onlineGame.getScoreO());
+        onlineGame.setScoreO(tempScore);
+    }
+
+    private int[] checkWinCombo(Game game) {
+        int[][] combos = {
+                {0, 1, 2}, {3, 4, 5}, {6, 7, 8},
+                {0, 3, 6}, {1, 4, 7}, {2, 5, 8},
+                {0, 4, 8}, {2, 4, 6}
+        };
+        for (int[] combo : combos) {
+            if (game.getSignAt(combo[0]) != Sign.EMPTY
+                    && game.getSignAt(combo[0]) == game.getSignAt(combo[1])
+                    && game.getSignAt(combo[1]) == game.getSignAt(combo[2])) {
+                return combo;
+            }
+        }
+        return null;
+    }
 }

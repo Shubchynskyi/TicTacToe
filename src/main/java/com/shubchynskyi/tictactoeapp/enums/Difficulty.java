@@ -1,5 +1,8 @@
-package com.shubchynskyi.tictactoeapp.entity;
+package com.shubchynskyi.tictactoeapp.enums;
 
+import lombok.Getter;
+
+@Getter
 public enum Difficulty {
     EASY("easy"),
     MEDIUM("medium"),
@@ -12,7 +15,4 @@ public enum Difficulty {
         this.value = value;
     }
 
-    public String getValue() {
-        return value;
-    }
 }

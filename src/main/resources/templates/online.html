@@ -21,7 +21,7 @@
         <input type="hidden" id="userIdHidden" th:value="${session.userId}" />
 
         <p>Ваш ник:
-            <span id="myNickSpan" th:text="${nick}"
+            <span id="myNickSpan" th:text="${session.nick}"
                   class="has-text-weight-bold">
                 Guest
             </span>
