@@ -25,7 +25,12 @@ public class OnlineGame {
     private int scoreX;
     private int scoreO;
 
-    public OnlineGame() { }
+    // Новое поле: когда истечёт время (в мс, System.currentTimeMillis())
+    // Если 0 — значит таймер не активен
+    private long closeTimeMillis; // todo удалить после тестов
+
+    public OnlineGame() {
+    }
 
     public OnlineGame(long gameId, String creatorId, String creatorDisplay) {
         this.gameId = gameId;
@@ -46,10 +51,12 @@ public class OnlineGame {
             this.playerOId = creatorId;
             this.playerODisplay = creatorDisplay;
         }
+
         this.waitingForSecondPlayer = true;
         this.finished = false;
         this.winnerDisplay = null;
         this.scoreX = 0;
         this.scoreO = 0;
+        this.closeTimeMillis = 0;
     }
 }

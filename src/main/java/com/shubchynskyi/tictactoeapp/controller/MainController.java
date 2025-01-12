@@ -48,7 +48,7 @@ public class MainController {
 
     private void setLastSymbolIfNotExists(HttpSession session) {
         if (session.getAttribute(Key.LAST_SYMBOL) == null) {
-            session.setAttribute(Key.LAST_SYMBOL, Character.toString(Sign.CROSS.getSign()));
+            session.setAttribute(Key.LAST_SYMBOL, Sign.CROSS.getSign());
         }
     }
 

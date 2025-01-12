@@ -7,22 +7,19 @@ import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBr
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
 
-// Comments in English: This class configures STOMP over WebSocket in Spring.
+
 @Configuration
 @EnableWebSocketMessageBroker
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry config) {
-        // Prefix for subscribing from client: /topic
         config.enableSimpleBroker("/topic");
-        // Prefix for client to send messages to server: /app
-        config.setApplicationDestinationPrefixes("/app");
+        config.setApplicationDestinationPrefixes("/app"); // todo to prop
     }
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        // The client will connect to /ws, enabling SockJS fallback
-        registry.addEndpoint("/ws").withSockJS();
+        registry.addEndpoint("/ws").withSockJS(); // todo to prop
     }
 }

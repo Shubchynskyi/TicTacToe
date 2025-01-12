@@ -2,7 +2,6 @@ package com.shubchynskyi.tictactoeapp.service;
 
 import com.shubchynskyi.tictactoeapp.domain.Game;
 import com.shubchynskyi.tictactoeapp.domain.OnlineGame;
-import com.shubchynskyi.tictactoeapp.enums.Sign;
 import jakarta.annotation.PostConstruct;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
@@ -18,44 +17,49 @@ public class OnlineGameService {
 
     private final ConcurrentHashMap<Long, OnlineGame> games = new ConcurrentHashMap<>();
     private final AtomicLong idGen = new AtomicLong(1000);
-
-    // Вместо одного ScheduledFuture храним "пару" задач для каждой игры
     private final Map<Long, TimerHandles> gameTimers = new ConcurrentHashMap<>();
-
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
-    // ---------------------------
-    //  Вспомогательный класс
-    // ---------------------------
-    private static class TimerHandles {
-        private final ScheduledFuture<?> warningFuture;
-        private final ScheduledFuture<?> closeFuture;
-
-        public TimerHandles(ScheduledFuture<?> warningFuture, ScheduledFuture<?> closeFuture) {
-            this.warningFuture = warningFuture;
-            this.closeFuture = closeFuture;
-        }
+    private record TimerHandles(ScheduledFuture<?> warningFuture, ScheduledFuture<?> closeFuture) {
 
         public void cancelAll(boolean mayInterruptIfRunning) {
-            if (warningFuture != null) {
-                warningFuture.cancel(mayInterruptIfRunning);
-            }
-            if (closeFuture != null) {
-                closeFuture.cancel(mayInterruptIfRunning);
+                if (warningFuture != null) {
+                    warningFuture.cancel(mayInterruptIfRunning);
+                }
+                if (closeFuture != null) {
+                    closeFuture.cancel(mayInterruptIfRunning);
+                }
             }
         }
-    }
 
     // -----------------------------------------------------------
-    //  Пример: метод для периодического логирования
+    //  todo удалить после тестов
     // -----------------------------------------------------------
     public void startPeriodicLogging(int periodInSeconds) {
         Runnable logTask = () -> {
             try {
                 List<OnlineGame> currentGames = listGames();
+                long now = System.currentTimeMillis();
+
                 System.err.println("=== Current online games (" + currentGames.size() + ") ===");
                 for (OnlineGame g : currentGames) {
-                    System.err.println(g);
+                    String xName = (g.getPlayerXDisplay() == null) ? "(empty)" : g.getPlayerXDisplay();
+                    String oName = (g.getPlayerODisplay() == null) ? "(empty)" : g.getPlayerODisplay();
+                    boolean finished = g.isFinished();
+
+                    // Сколько осталось секунд до закрытия
+                    long timeLeftSec = 0;
+                    if (g.getCloseTimeMillis() > now) {
+                        timeLeftSec = (g.getCloseTimeMillis() - now) / 1000;
+                    }
+
+                    System.err.printf("Game #%d | X=%s, O=%s, finished=%s, timeLeft=%ds%n",
+                            g.getGameId(),
+                            xName,
+                            oName,
+                            finished,
+                            timeLeftSec
+                    );
                 }
                 System.err.println("==============================================");
             } catch (Exception e) {
@@ -63,19 +67,16 @@ public class OnlineGameService {
             }
         };
 
-        // Запускаем задачу в отдельном потоке с периодом periodInSeconds
         scheduler.scheduleAtFixedRate(logTask, 0, periodInSeconds, TimeUnit.SECONDS);
     }
 
     @PostConstruct
-    public void initLogging() {
-        // Допустим, хотим логировать каждые 10 секунд
-        startPeriodicLogging(10);
+    public void initLogging() { // todo удалить после тестов
+
+        startPeriodicLogging(5);
     }
 
-    // -----------------------------------------------------------
-    //  Методы CRUD и логика игры
-    // -----------------------------------------------------------
+
 
     public long createGame(String userId, String displayName) {
         long gameId = idGen.incrementAndGet();
@@ -111,7 +112,6 @@ public class OnlineGameService {
             if (isValidMove(onlineGame, userId)) {
                 game.makeMove(row, col);
             }
-
             if (game.isGameOver()) {
                 handleGameOver(onlineGame, game);
             }
@@ -121,20 +121,16 @@ public class OnlineGameService {
     public boolean leaveGame(long gameId, String userId) {
         OnlineGame onlineGame = games.get(gameId);
         if (onlineGame != null) {
-            // Если вышел создатель, удаляем игру целиком
             if (userId.equals(onlineGame.getCreatorId())) {
                 games.remove(gameId);
-                stopTimerForGame(gameId); // Останавливаем таймеры
+                stopTimerForGame(gameId);
                 return true;
             }
 
-            // Если вышел второй игрок, освобождаем его слот
             boolean playerLeft = removePlayer(onlineGame, userId);
             if (playerLeft) {
-                // Сбрасываем игру, возвращаем в состояние ожидания
                 resetGame(onlineGame);
                 onlineGame.setWaitingForSecondPlayer(true);
-                // Таймер можно перезапустить, если хотите дать время на повторное подключение
                 return false;
             }
         }
@@ -143,7 +139,7 @@ public class OnlineGameService {
 
     public void deleteGame(long gameId) {
         games.remove(gameId);
-        stopTimerForGame(gameId); // При удалении игры также останавливаем таймер
+        stopTimerForGame(gameId);
     }
 
     public OnlineGame rematchGame(long gameId) {
@@ -154,17 +150,10 @@ public class OnlineGameService {
 
         resetGameWithoutScores(onlineGame);
         switchPlayers(onlineGame);
-        onlineGame.setWaitingForSecondPlayer(
-                onlineGame.getPlayerXId() == null || onlineGame.getPlayerOId() == null
-        );
+        onlineGame.setWaitingForSecondPlayer(onlineGame.getPlayerXId() == null || onlineGame.getPlayerOId() == null);
         return onlineGame;
     }
 
-    // -----------------------------------------------------------
-    //  Таймеры
-    // -----------------------------------------------------------
-
-    // Метод остановки (отмены) таймеров для игры
     public void stopTimerForGame(long gameId) {
         TimerHandles handles = gameTimers.remove(gameId);
         if (handles != null) {
@@ -172,46 +161,46 @@ public class OnlineGameService {
         }
     }
 
-    /**
-     * Запускаем два таймера:
-     * 1. warningFuture — за 30 секунд до конца отправляет "TIMELEFT_30"
-     * 2. closeFuture   — по окончании времени закрывает игру
-     */
     public void startInactivityTimer(long gameId, SimpMessagingTemplate msgTemplate, int minutes) {
-        // Сначала отменяем старые, если были
         stopTimerForGame(gameId);
 
+        OnlineGame onlineGame = getOnlineGame(gameId);
+        if (onlineGame == null || onlineGame.isFinished()) {
+            return;
+        }
+
         long totalSeconds = minutes * 60L;
+        long now = System.currentTimeMillis();
+
+        long closeTimeMillis = now + totalSeconds * 1000;
+        onlineGame.setCloseTimeMillis(closeTimeMillis);
+
         long warningSeconds = Math.max(totalSeconds - 30, 0);
 
-        // 1) Запланировать оповещение за 30 секунд до конца
         ScheduledFuture<?> warningFuture = scheduler.schedule(() -> {
-            OnlineGame onlineGame = getOnlineGame(gameId);
-            if (onlineGame != null && !onlineGame.isFinished()) {
+            OnlineGame g = getOnlineGame(gameId);
+            if (g != null && !g.isFinished()) {
                 msgTemplate.convertAndSend("/topic/online-game-" + gameId, "\"TIMELEFT_30\"");
             }
         }, warningSeconds, TimeUnit.SECONDS);
 
-        // 2) Запланировать фактическое закрытие игры
+        // 2) закрыть игру по истечении totalSeconds
         ScheduledFuture<?> closeFuture = scheduler.schedule(() -> {
-            OnlineGame onlineGame = getOnlineGame(gameId);
-            if (onlineGame != null && !onlineGame.isFinished()) {
-                onlineGame.setFinished(true);
-                deleteGame(gameId); // удаляем саму игру и отменяем таймеры
+            OnlineGame g = getOnlineGame(gameId);
+            if (g != null && !g.isFinished()) {
+                g.setFinished(true);
+                deleteGame(gameId);
                 msgTemplate.convertAndSend("/topic/online-game-" + gameId, "\"CLOSED\"");
-                // Не забудьте оповестить список игр:
                 msgTemplate.convertAndSend("/topic/game-list", listGames());
             }
         }, totalSeconds, TimeUnit.SECONDS);
 
-        // Сохраняем обе задачи в Map
         gameTimers.put(gameId, new TimerHandles(warningFuture, closeFuture));
     }
 
     // -----------------------------------------------------------
     //  Вспомогательные методы
     // -----------------------------------------------------------
-
     private void assignPlayer(OnlineGame onlineGame, String userId, String displayName) {
         if (onlineGame.getPlayerXId() == null) {
             onlineGame.setPlayerXId(userId);
@@ -223,8 +212,7 @@ public class OnlineGameService {
     }
 
     private boolean isValidMove(OnlineGame onlineGame, String userId) {
-        Game game = onlineGame.getGame();
-        String currentPlayer = game.getCurrentPlayer();
+        String currentPlayer = onlineGame.getGame().getCurrentPlayer();
         return ("X".equals(currentPlayer) && userId.equals(onlineGame.getPlayerXId()))
                 || ("O".equals(currentPlayer) && userId.equals(onlineGame.getPlayerOId()));
     }
@@ -232,27 +220,15 @@ public class OnlineGameService {
     private void handleGameOver(OnlineGame onlineGame, Game game) {
         onlineGame.setFinished(true);
         String winner = game.getWinner();
-        onlineGame.setWinnerDisplay(getWinnerDisplay(winner, onlineGame));
-        updateScores(onlineGame, winner);
-        int[] winningCombo = checkWinCombo(game);
-        onlineGame.getGame().setWinningCombo(winningCombo);
-    }
 
-    private String getWinnerDisplay(String winner, OnlineGame onlineGame) {
-        if ("DRAW".equals(winner)) {
-            return "DRAW";
-        } else if ("X".equals(winner)) {
-            return onlineGame.getPlayerXDisplay();
-        } else {
-            return onlineGame.getPlayerODisplay();
-        }
-    }
-
-    private void updateScores(OnlineGame onlineGame, String winner) {
         if ("X".equals(winner)) {
+            onlineGame.setWinnerDisplay(onlineGame.getPlayerXDisplay());
             onlineGame.setScoreX(onlineGame.getScoreX() + 1);
         } else if ("O".equals(winner)) {
+            onlineGame.setWinnerDisplay(onlineGame.getPlayerODisplay());
             onlineGame.setScoreO(onlineGame.getScoreO() + 1);
+        } else {
+            onlineGame.setWinnerDisplay("DRAW");
         }
     }
 
@@ -275,14 +251,14 @@ public class OnlineGameService {
         onlineGame.setScoreO(0);
         onlineGame.setFinished(false);
         onlineGame.setWinnerDisplay(null);
-        onlineGame.getGame().setWinningCombo(null);
+        onlineGame.setCloseTimeMillis(0);
     }
 
     private void resetGameWithoutScores(OnlineGame onlineGame) {
         onlineGame.getGame().resetBoard();
         onlineGame.setFinished(false);
         onlineGame.setWinnerDisplay(null);
-        onlineGame.getGame().setWinningCombo(null);
+        onlineGame.setCloseTimeMillis(0);
     }
 
     private void switchPlayers(OnlineGame onlineGame) {
@@ -297,21 +273,5 @@ public class OnlineGameService {
         int tempScore = onlineGame.getScoreX();
         onlineGame.setScoreX(onlineGame.getScoreO());
         onlineGame.setScoreO(tempScore);
-    }
-
-    private int[] checkWinCombo(Game game) {
-        int[][] combos = {
-                {0, 1, 2}, {3, 4, 5}, {6, 7, 8},
-                {0, 3, 6}, {1, 4, 7}, {2, 5, 8},
-                {0, 4, 8}, {2, 4, 6}
-        };
-        for (int[] combo : combos) {
-            if (game.getSignAt(combo[0]) != Sign.EMPTY
-                    && game.getSignAt(combo[0]) == game.getSignAt(combo[1])
-                    && game.getSignAt(combo[1]) == game.getSignAt(combo[2])) {
-                return combo;
-            }
-        }
-        return null;
     }
 }

@@ -11,5 +11,5 @@ public class OnlineGameMessage {
     private int row;
     private int col;
 
-    public OnlineGameMessage() {}
+    public OnlineGameMessage() {} //todo need it? for json?
 }

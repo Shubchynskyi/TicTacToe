@@ -4,13 +4,13 @@ import lombok.Getter;
 
 @Getter
 public enum Sign {
-    EMPTY(' '),
-    CROSS('X'),
-    NOUGHT('0');
+    EMPTY(" "),
+    CROSS("X"),
+    NOUGHT("0");
 
-    private final char sign;
+    private final String sign;
 
-    Sign(char sign) {
+    Sign(String sign) {
         this.sign = sign;
     }
 
