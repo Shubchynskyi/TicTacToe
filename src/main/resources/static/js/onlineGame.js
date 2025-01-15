@@ -81,7 +81,7 @@ function goToListNow() {
     window.location.href = "/online";
 }
 
-function sendMove(r, c) {
+function makeMove(r, c) {
     const msg = {
         gameId: gameId,
         userId: currentUserId,
