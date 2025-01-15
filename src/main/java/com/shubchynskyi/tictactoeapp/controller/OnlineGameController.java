@@ -1,7 +1,6 @@
 package com.shubchynskyi.tictactoeapp.controller;
 
-import com.shubchynskyi.tictactoeapp.constants.Key;
-import com.shubchynskyi.tictactoeapp.constants.Route;
+import com.shubchynskyi.tictactoeapp.constants.*;
 import com.shubchynskyi.tictactoeapp.domain.OnlineGame;
 import com.shubchynskyi.tictactoeapp.dto.LeaveGameMessage;
 import com.shubchynskyi.tictactoeapp.dto.OnlineGameMessage;
@@ -21,6 +20,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.function.Supplier;
 
 @Controller
 @RequiredArgsConstructor
@@ -34,48 +34,44 @@ public class OnlineGameController {
 
     @Value("${app.timeOut.newGame}")
     private int timeOutForNewGame;
+
     @Value("${app.timeOut.ongoingGame}")
     private int timeOutForOngoingGame;
 
     @GetMapping(Route.ONLINE)
     public String showOnlineGames(Model model, HttpSession session) {
         List<OnlineGame> onlineGames = onlineGameService.listGames();
-        model.addAttribute(Key.GAMES, onlineGames);
-
+        model.addAttribute(SessionAttributes.GAMES, onlineGames);
         ensureSessionAttributes(session);
-        return Route.ONLINE;
+        return View.ONLINE;
     }
 
     @PostMapping(Route.CREATE_ONLINE)
     public String createOnline(HttpSession session) {
         ensureSessionAttributes(session);
-
-        String userId = (String) session.getAttribute(Key.USER_ID);
-        String nick = (String) session.getAttribute(Key.NICK);
+        String userId = (String) session.getAttribute(SessionAttributes.USER_ID);
+        String nick = (String) session.getAttribute(SessionAttributes.NICK);
 
         long gameId = onlineGameService.createGame(userId, nick);
         onlineGameService.startInactivityTimer(gameId, messagingTemplate, timeOutForNewGame);
         broadcastGameList();
-
-        return Route.REDIRECT + Route.ONLINE_GAME + Route.GAME_ID_PATTERN + gameId;
+        return Route.REDIRECT + Route.ONLINE_GAME + Route.GAME_ID_PARAM + gameId;
     }
 
     @GetMapping(Route.JOIN_ONLINE)
-    public String joinGame(@RequestParam(Key.GAME_ID) long gameId, HttpSession session) {
+    public String joinGame(@RequestParam(RequestParams.GAME_ID) long gameId, HttpSession session) {
         ensureSessionAttributes(session);
-
-        String userId = (String) session.getAttribute(Key.USER_ID);
-        String nick = (String) session.getAttribute(Key.NICK);
+        String userId = (String) session.getAttribute(SessionAttributes.USER_ID);
+        String nick = (String) session.getAttribute(SessionAttributes.NICK);
 
         onlineGameService.joinGame(gameId, userId, nick);
         handleGameJoin(gameId);
-
         broadcastGameList();
-        return Route.REDIRECT + Route.ONLINE_GAME + Route.GAME_ID_PATTERN + gameId;
+        return Route.REDIRECT + Route.ONLINE_GAME + Route.GAME_ID_PARAM + gameId;
     }
 
     @GetMapping(Route.ONLINE_GAME)
-    public String onlineGamePage(@RequestParam(Key.GAME_ID) long gameId, Model model, HttpSession session) {
+    public String onlineGamePage(@RequestParam(RequestParams.GAME_ID) long gameId, Model model, HttpSession session) {
         ensureSessionAttributes(session);
 
         OnlineGame onlineGame = onlineGameService.getOnlineGame(gameId);
@@ -83,25 +79,21 @@ public class OnlineGameController {
             return Route.REDIRECT + Route.ONLINE;
         }
 
-        String userId = (String) session.getAttribute(Key.USER_ID);
-        String nick = (String) session.getAttribute(Key.NICK);
+        String userId = (String) session.getAttribute(SessionAttributes.USER_ID);
 
-        if (!onlineGame.isWaitingForSecondPlayer()) {
-            boolean isPlayer = userId.equals(onlineGame.getPlayerXId()) || userId.equals(onlineGame.getPlayerOId());
-            if (!isPlayer) {
-                return Route.REDIRECT + Route.ONLINE;
-            }
+        if (!onlineGame.isWaitingForSecondPlayer() &&
+                !(userId.equals(onlineGame.getPlayerXId()) || userId.equals(onlineGame.getPlayerOId()))) {
+            return Route.REDIRECT + Route.ONLINE;
         }
 
-        model.addAttribute(Key.ONLINE_GAME, onlineGame);
-        model.addAttribute(Key.NICK, nick);
-        return Key.ONLINE_GAME;
+        model.addAttribute(SessionAttributes.ONLINE_GAME, onlineGame);
+        model.addAttribute(SessionAttributes.NICK, session.getAttribute(SessionAttributes.NICK));
+        return View.ONLINE_GAME;
     }
 
     @MessageMapping(Route.ONLINE_MOVE)
     public void handleOnlineMove(OnlineGameMessage message) {
         onlineGameService.makeMove(message.getGameId(), message.getUserId(), message.getRow(), message.getCol());
-
         OnlineGame onlineGame = onlineGameService.getOnlineGame(message.getGameId());
         if (onlineGame != null) {
             messagingTemplate.convertAndSend(Route.TOPIC_ONLINE_GAME_PREFIX + message.getGameId(), onlineGame);
@@ -113,12 +105,10 @@ public class OnlineGameController {
         OnlineGame onlineGame = onlineGameService.rematchGame(message.getGameId());
         if (onlineGame != null) {
             messagingTemplate.convertAndSend(Route.TOPIC_ONLINE_GAME_PREFIX + message.getGameId(), onlineGame);
-
-            if (onlineGame.getPlayerXId() != null && onlineGame.getPlayerOId() != null && !onlineGame.isFinished()) {
-                onlineGameService.startInactivityTimer(message.getGameId(), messagingTemplate, timeOutForOngoingGame);
-            } else {
-                onlineGameService.startInactivityTimer(message.getGameId(), messagingTemplate, timeOutForNewGame);
-            }
+            int timeout = (onlineGame.getPlayerXId() != null && onlineGame.getPlayerOId() != null && !onlineGame.isFinished())
+                    ? timeOutForOngoingGame
+                    : timeOutForNewGame;
+            onlineGameService.startInactivityTimer(message.getGameId(), messagingTemplate, timeout);
         }
     }
 
@@ -128,17 +118,13 @@ public class OnlineGameController {
         broadcastGameList();
 
         if (gameClosed) {
-            messagingTemplate.convertAndSend(Route.TOPIC_ONLINE_GAME_PREFIX + message.getGameId(), Key.CLOSED);
+            messagingTemplate.convertAndSend(Route.TOPIC_ONLINE_GAME_PREFIX + message.getGameId(), WebSocketCommand.CLOSED);
         } else {
             OnlineGame onlineGame = onlineGameService.getOnlineGame(message.getGameId());
             if (onlineGame != null) {
                 messagingTemplate.convertAndSend(Route.TOPIC_ONLINE_GAME_PREFIX + message.getGameId(), onlineGame);
-
-                if ((onlineGame.getPlayerXId() != null && onlineGame.getPlayerOId() == null)
-                        || (onlineGame.getPlayerXId() == null && onlineGame.getPlayerOId() != null)) {
-                    if (!onlineGame.isFinished()) {
-                        onlineGameService.startInactivityTimer(message.getGameId(), messagingTemplate, timeOutForNewGame);
-                    }
+                if (isOnePlayerPresent(onlineGame) && !onlineGame.isFinished()) {
+                    onlineGameService.startInactivityTimer(message.getGameId(), messagingTemplate, timeOutForNewGame);
                 }
             }
         }
@@ -146,19 +132,18 @@ public class OnlineGameController {
 
     @GetMapping(Route.ONLINE_STATE)
     @ResponseBody
-    public OnlineGame getOnlineState(@RequestParam(Key.GAME_ID) long gameId) {
+    public OnlineGame getOnlineState(@RequestParam(RequestParams.GAME_ID) long gameId) {
         return onlineGameService.getOnlineGame(gameId);
     }
 
     private void ensureSessionAttributes(HttpSession session) {
-        if (session.getAttribute(Key.USER_ID) == null) {
-            String userId = UUID.randomUUID().toString();
-            session.setAttribute(Key.USER_ID, userId);
-        }
+        setIfAbsent(session, SessionAttributes.USER_ID, () -> UUID.randomUUID().toString());
+        setIfAbsent(session, SessionAttributes.NICK, () -> defaultNick + (System.currentTimeMillis() % 1000));
+    }
 
-        if (session.getAttribute(Key.NICK) == null) {
-            String nick = defaultNick + (System.currentTimeMillis() % 1000);
-            session.setAttribute(Key.NICK, nick);
+    private void setIfAbsent(HttpSession session, String key, Supplier<Object> supplier) {
+        if (session.getAttribute(key) == null) {
+            session.setAttribute(key, supplier.get());
         }
     }
 
@@ -175,5 +160,10 @@ public class OnlineGameController {
     private void broadcastGameList() {
         List<OnlineGame> allGames = onlineGameService.listGames();
         messagingTemplate.convertAndSend(Route.TOPIC_GAME_LIST, allGames);
+    }
+
+    private boolean isOnePlayerPresent(OnlineGame onlineGame) {
+        return (onlineGame.getPlayerXId() != null && onlineGame.getPlayerOId() == null)
+                || (onlineGame.getPlayerXId() == null && onlineGame.getPlayerOId() != null);
     }
 }

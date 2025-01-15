@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
 <head>
     <title>TicTacToe — Главная</title>
     <meta charset="UTF-8"/>
@@ -18,7 +18,7 @@
             cursor:pointer;
         }
         .symbol-button.selected {
-            background-color: #48c774 !important; /* Bulma success color */
+            background-color: #48c774 !important;
             color: #fff;
         }
     </style>
@@ -30,8 +30,8 @@
 
         <p>Ваш ник:
             <span th:text="${session.nick}">Guest</span>
-            <input id="nickInput" type="text" placeholder="Новый ник"
-                   style="margin-left:10px;"/>
+            <label for="nickInput"></label><input id="nickInput" type="text" placeholder="Новый ник"
+                                                  style="margin-left:10px;"/>
             <button class="button is-small is-info" style="margin-left:5px;"
                     onclick="changeNickname()">
                 Сменить ник
@@ -40,7 +40,6 @@
 
         <form action="/start" method="get" style="margin-top:1rem;" id="gameForm">
 
-            <!-- Режим игры: single/local -->
             <div class="field">
                 <label class="label">Режим игры:</label>
                 <div class="control">
@@ -59,19 +58,18 @@
                 </div>
             </div>
 
-            <!-- Блок для одиночной игры -->
             <div id="singleSettings" style="margin-top:1rem;">
                 <div class="field" style="margin-bottom:1rem;">
                     <label class="label">Символ:</label>
                     <div class="control" style="display:flex; gap:1rem;">
-                        <!-- Кнопка X -->
+                        <!-- Button X -->
                         <div id="btnX" class="button symbol-button"
                              onclick="selectSymbol('X')">X</div>
-                        <!-- Кнопка O -->
+                        <!-- Button O -->
                         <div id="btnO" class="button symbol-button"
                              onclick="selectSymbol('O')">O</div>
 
-                        <!-- Скрытое поле playerSymbol -->
+                        <!-- Hidden playerSymbol -->
                         <input type="hidden" name="playerSymbol"
                                id="playerSymbolHidden"
                                th:value="${lastSymbol != null ? lastSymbol : 'X'}">
@@ -82,19 +80,21 @@
                     <label class="label">Сложность:</label>
                     <div class="control">
                         <div class="select">
-                            <select name="difficulty">
-                                <option th:each="diff : ${difficulties}"
-                                        th:value="${diff.value}"
-                                        th:text="${diff.value}"
-                                        th:selected="${diff.value == lastDiff}">
-                                </option>
-                            </select>
+                            <label>
+                                <select name="difficulty">
+                                    <option th:each="diff : ${difficulties}"
+                                            th:value="${diff.value}"
+                                            th:text="${diff.value}"
+                                            th:selected="${diff.value == lastDiff}">
+                                    </option>
+                                </select>
+                            </label>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Кнопка "Новая игра" -->
+            <!-- "New game button" -->
             <div class="field" style="margin-top:1.5rem;">
                 <button class="button is-primary" type="submit"
                         style="width:100px;">

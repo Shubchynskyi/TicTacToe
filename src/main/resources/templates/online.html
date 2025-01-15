@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
 <head>
     <title>Сетевые игры</title>
     <meta charset="UTF-8"/>
@@ -34,7 +34,6 @@
             </button>
         </form>
 
-        <!-- Список -->
         <table class="table is-fullwidth is-hoverable" style="margin-bottom:1rem;">
             <thead>
             <tr>
@@ -48,9 +47,6 @@
             <tbody id="gamesBody">
             <tr th:each="g : ${games}">
                 <td th:text="${g.gameId}">?</td>
-
-<!--                <td th:text="${g.playerXDisplay}">X</td>-->
-<!--                <td th:text="${g.playerODisplay}">O</td>-->
 
                 <td th:classappend="${(g.creatorId == session.userId && g.playerXId == g.creatorId)}
                      ? 'has-text-weight-bold':''"
@@ -66,11 +62,6 @@
                     <span th:if="${!g.waitingForSecondPlayer}">Игра идёт</span>
                 </td>
                 <td>
-                    <!--
-                      waiting => if userId in (Xid,Oid) => "Перейти"
-                                 else => "Присоединиться"
-                      !waiting => if userId in game => "Перейти", else => "Идёт игра"
-                    -->
                     <span th:if="${g.waitingForSecondPlayer
                                  && (session.userId == g.playerXId
                                      || session.userId == g.playerOId)}">
@@ -106,7 +97,6 @@
             </tbody>
         </table>
 
-        <!-- Кнопки под списком, одной строки, одинаковой ширины -->
         <div style="display:flex; gap:1rem; margin-top:2rem;">
             <a class="button is-link" href="/" style="width:200px;">
                 К выбору режима

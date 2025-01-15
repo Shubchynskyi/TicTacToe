@@ -22,7 +22,7 @@ public abstract class AbstractDifficultyStrategy implements DifficultyStrategy {
     public final void makeMove(Game game) {
         for (StrategyStep step : getSteps()) {
             if (step.doStep(game)) {
-                break; // Завершаем, если шаг выполнен успешно
+                break;
             }
         }
     }

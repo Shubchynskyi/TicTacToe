@@ -1,7 +1,11 @@
 package com.shubchynskyi.tictactoeapp.service;
 
+import com.shubchynskyi.tictactoeapp.constants.Key;
+import com.shubchynskyi.tictactoeapp.constants.Route;
+import com.shubchynskyi.tictactoeapp.constants.WebSocketCommand;
 import com.shubchynskyi.tictactoeapp.domain.Game;
 import com.shubchynskyi.tictactoeapp.domain.OnlineGame;
+import com.shubchynskyi.tictactoeapp.enums.Sign;
 import jakarta.annotation.PostConstruct;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
@@ -21,16 +25,15 @@ public class OnlineGameService {
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
     private record TimerHandles(ScheduledFuture<?> warningFuture, ScheduledFuture<?> closeFuture) {
-
         public void cancelAll(boolean mayInterruptIfRunning) {
-                if (warningFuture != null) {
-                    warningFuture.cancel(mayInterruptIfRunning);
-                }
-                if (closeFuture != null) {
-                    closeFuture.cancel(mayInterruptIfRunning);
-                }
+            if (warningFuture != null) {
+                warningFuture.cancel(mayInterruptIfRunning);
+            }
+            if (closeFuture != null) {
+                closeFuture.cancel(mayInterruptIfRunning);
             }
         }
+    }
 
     // -----------------------------------------------------------
     //  todo удалить после тестов
@@ -47,19 +50,13 @@ public class OnlineGameService {
                     String oName = (g.getPlayerODisplay() == null) ? "(empty)" : g.getPlayerODisplay();
                     boolean finished = g.isFinished();
 
-                    // Сколько осталось секунд до закрытия
                     long timeLeftSec = 0;
                     if (g.getCloseTimeMillis() > now) {
                         timeLeftSec = (g.getCloseTimeMillis() - now) / 1000;
                     }
 
                     System.err.printf("Game #%d | X=%s, O=%s, finished=%s, timeLeft=%ds%n",
-                            g.getGameId(),
-                            xName,
-                            oName,
-                            finished,
-                            timeLeftSec
-                    );
+                            g.getGameId(), xName, oName, finished, timeLeftSec);
                 }
                 System.err.println("==============================================");
             } catch (Exception e) {
@@ -70,9 +67,11 @@ public class OnlineGameService {
         scheduler.scheduleAtFixedRate(logTask, 0, periodInSeconds, TimeUnit.SECONDS);
     }
 
+    // -----------------------------------------------------------
+    //  todo удалить после тестов
+    // -----------------------------------------------------------
     @PostConstruct
-    public void initLogging() { // todo удалить после тестов
-
+    public void initLogging() {
         startPeriodicLogging(5);
     }
 
@@ -106,7 +105,6 @@ public class OnlineGameService {
         if (onlineGame == null || onlineGame.isFinished()) {
             return;
         }
-
         Game game = onlineGame.getGame();
         if (!game.isGameOver()) {
             if (isValidMove(onlineGame, userId)) {
@@ -147,10 +145,11 @@ public class OnlineGameService {
         if (onlineGame == null || !onlineGame.isFinished()) {
             return onlineGame;
         }
-
         resetGameWithoutScores(onlineGame);
         switchPlayers(onlineGame);
-        onlineGame.setWaitingForSecondPlayer(onlineGame.getPlayerXId() == null || onlineGame.getPlayerOId() == null);
+        onlineGame.setWaitingForSecondPlayer(
+                onlineGame.getPlayerXId() == null || onlineGame.getPlayerOId() == null
+        );
         return onlineGame;
     }
 
@@ -161,7 +160,7 @@ public class OnlineGameService {
         }
     }
 
-    public void startInactivityTimer(long gameId, SimpMessagingTemplate msgTemplate, int minutes) {
+    public void startInactivityTimer(long gameId, SimpMessagingTemplate messagingTemplate, int minutes) {
         stopTimerForGame(gameId);
 
         OnlineGame onlineGame = getOnlineGame(gameId);
@@ -171,7 +170,6 @@ public class OnlineGameService {
 
         long totalSeconds = minutes * 60L;
         long now = System.currentTimeMillis();
-
         long closeTimeMillis = now + totalSeconds * 1000;
         onlineGame.setCloseTimeMillis(closeTimeMillis);
 
@@ -180,27 +178,29 @@ public class OnlineGameService {
         ScheduledFuture<?> warningFuture = scheduler.schedule(() -> {
             OnlineGame g = getOnlineGame(gameId);
             if (g != null && !g.isFinished()) {
-                msgTemplate.convertAndSend("/topic/online-game-" + gameId, "\"TIMELEFT_30\"");
+                messagingTemplate.convertAndSend(
+                        Route.TOPIC_ONLINE_GAME_PREFIX + gameId,
+                        WebSocketCommand.TIME_LEFT_30
+                );
             }
         }, warningSeconds, TimeUnit.SECONDS);
 
-        // 2) закрыть игру по истечении totalSeconds
         ScheduledFuture<?> closeFuture = scheduler.schedule(() -> {
             OnlineGame g = getOnlineGame(gameId);
             if (g != null && !g.isFinished()) {
                 g.setFinished(true);
                 deleteGame(gameId);
-                msgTemplate.convertAndSend("/topic/online-game-" + gameId, "\"CLOSED\"");
-                msgTemplate.convertAndSend("/topic/game-list", listGames());
+                messagingTemplate.convertAndSend(
+                        Route.TOPIC_ONLINE_GAME_PREFIX + gameId,
+                        WebSocketCommand.CLOSED
+                );
+                messagingTemplate.convertAndSend(Route.TOPIC_GAME_LIST, listGames());
             }
         }, totalSeconds, TimeUnit.SECONDS);
 
         gameTimers.put(gameId, new TimerHandles(warningFuture, closeFuture));
     }
 
-    // -----------------------------------------------------------
-    //  Вспомогательные методы
-    // -----------------------------------------------------------
     private void assignPlayer(OnlineGame onlineGame, String userId, String displayName) {
         if (onlineGame.getPlayerXId() == null) {
             onlineGame.setPlayerXId(userId);
@@ -213,22 +213,22 @@ public class OnlineGameService {
 
     private boolean isValidMove(OnlineGame onlineGame, String userId) {
         String currentPlayer = onlineGame.getGame().getCurrentPlayer();
-        return ("X".equals(currentPlayer) && userId.equals(onlineGame.getPlayerXId()))
-                || ("O".equals(currentPlayer) && userId.equals(onlineGame.getPlayerOId()));
+        return (Sign.CROSS.getSign().equals(currentPlayer) && userId.equals(onlineGame.getPlayerXId()))
+                || (Sign.NOUGHT.getSign().equals(currentPlayer) && userId.equals(onlineGame.getPlayerOId()));
     }
 
     private void handleGameOver(OnlineGame onlineGame, Game game) {
         onlineGame.setFinished(true);
         String winner = game.getWinner();
 
-        if ("X".equals(winner)) {
+        if (Sign.CROSS.getSign().equals(winner)) {
             onlineGame.setWinnerDisplay(onlineGame.getPlayerXDisplay());
             onlineGame.setScoreX(onlineGame.getScoreX() + 1);
-        } else if ("O".equals(winner)) {
+        } else if (Sign.NOUGHT.getSign().equals(winner)) {
             onlineGame.setWinnerDisplay(onlineGame.getPlayerODisplay());
             onlineGame.setScoreO(onlineGame.getScoreO() + 1);
         } else {
-            onlineGame.setWinnerDisplay("DRAW");
+            onlineGame.setWinnerDisplay(Key.DRAW);
         }
     }
 

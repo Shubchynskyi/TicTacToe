@@ -1,7 +1,8 @@
 package com.shubchynskyi.tictactoeapp.controller;
 
-import com.shubchynskyi.tictactoeapp.constants.Key;
 import com.shubchynskyi.tictactoeapp.constants.Route;
+import com.shubchynskyi.tictactoeapp.constants.SessionAttributes;
+import com.shubchynskyi.tictactoeapp.constants.View;
 import com.shubchynskyi.tictactoeapp.enums.Difficulty;
 import com.shubchynskyi.tictactoeapp.enums.Sign;
 import jakarta.servlet.http.HttpSession;
@@ -11,6 +12,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 
 import java.util.UUID;
+import java.util.function.Supplier;
 
 @Controller
 public class MainController {
@@ -22,45 +24,25 @@ public class MainController {
     public String index(HttpSession session, Model model) {
         initializeSessionAttributes(session);
         addModelAttributes(model, session);
-        return Key.GAME_VIEW;
+        return View.INDEX;
     }
 
     private void initializeSessionAttributes(HttpSession session) {
-        setUserIdIfNotExists(session);
-        setNickIfNotExists(session);
-        setLastSymbolIfNotExists(session);
-        setLastDifficultyIfNotExists(session);
-    }
-
-    private void setUserIdIfNotExists(HttpSession session) {
-        if (session.getAttribute(Key.USER_ID) == null) {
-            String userId = UUID.randomUUID().toString();
-            session.setAttribute(Key.USER_ID, userId);
-        }
-    }
-
-    private void setNickIfNotExists(HttpSession session) {
-        if (session.getAttribute(Key.NICK) == null) {
-            long rnd = System.currentTimeMillis() % 1000;
-            session.setAttribute(Key.NICK, defaultNick + rnd);
-        }
-    }
-
-    private void setLastSymbolIfNotExists(HttpSession session) {
-        if (session.getAttribute(Key.LAST_SYMBOL) == null) {
-            session.setAttribute(Key.LAST_SYMBOL, Sign.CROSS.getSign());
-        }
-    }
-
-    private void setLastDifficultyIfNotExists(HttpSession session) {
-        if (session.getAttribute(Key.LAST_DIFF) == null) {
-            session.setAttribute(Key.LAST_DIFF, Difficulty.EASY.getValue());
-        }
+        setIfAbsent(session, SessionAttributes.USER_ID, () -> UUID.randomUUID().toString());
+        setIfAbsent(session, SessionAttributes.NICK, () -> defaultNick + (System.currentTimeMillis() % 1000));
+        setIfAbsent(session, SessionAttributes.LAST_SYMBOL, Sign.CROSS::getSign);
+        setIfAbsent(session, SessionAttributes.LAST_DIFF, Difficulty.EASY::getValue);
     }
 
     private void addModelAttributes(Model model, HttpSession session) {
-        model.addAttribute(Key.LAST_SYMBOL, session.getAttribute(Key.LAST_SYMBOL));
-        model.addAttribute(Key.LAST_DIFF, session.getAttribute(Key.LAST_DIFF));
-        model.addAttribute(Key.DIFFICULTIES, Difficulty.values());
+        model.addAttribute(SessionAttributes.DIFFICULTIES, Difficulty.values());
+        model.addAttribute(SessionAttributes.LAST_SYMBOL, session.getAttribute(SessionAttributes.LAST_SYMBOL));
+        model.addAttribute(SessionAttributes.LAST_DIFF, session.getAttribute(SessionAttributes.LAST_DIFF));
+    }
+
+    private void setIfAbsent(HttpSession session, String key, Supplier<Object> supplier) {
+        if (session.getAttribute(key) == null) {
+            session.setAttribute(key, supplier.get());
+        }
     }
 }

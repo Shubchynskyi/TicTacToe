@@ -1,8 +1,6 @@
 package com.shubchynskyi.tictactoeapp.controller;
 
-
-import com.shubchynskyi.tictactoeapp.constants.Key;
-import com.shubchynskyi.tictactoeapp.constants.Route;
+import com.shubchynskyi.tictactoeapp.constants.*;
 import com.shubchynskyi.tictactoeapp.domain.Game;
 import com.shubchynskyi.tictactoeapp.enums.Difficulty;
 import com.shubchynskyi.tictactoeapp.enums.Sign;
@@ -11,38 +9,37 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-
 @RestController
 public class MoveController {
 
     @GetMapping(Route.MAKE_MOVE)
     public Game makeLocalMove(
-            @RequestParam(Key.ROW) int row,
-            @RequestParam(Key.COL) int col,
+            @RequestParam(RequestParams.ROW) int row,
+            @RequestParam(RequestParams.COL) int col,
             HttpSession session
     ) {
-        Game game = retrieveLocalGameFromSession(session);
+        Game game = retrieveLocalGame(session);
         game.makeMove(row, col);
         return game;
     }
 
     @GetMapping(Route.RESTART_LOCAL)
     public Game restartLocal(HttpSession session) {
-        Game game = retrieveLocalGameFromSession(session);
+        Game game = retrieveLocalGame(session);
         game.resetBoard();
         return game;
     }
 
-    private Game retrieveLocalGameFromSession(HttpSession session) {
-        Game game = (Game) session.getAttribute(Key.LOCAL_GAME);
+    private Game retrieveLocalGame(HttpSession session) {
+        Game game = (Game) session.getAttribute(SessionAttributes.LOCAL_GAME);
         if (game == null) {
             game = createDefaultGame();
-            session.setAttribute(Key.LOCAL_GAME, game);
+            session.setAttribute(SessionAttributes.LOCAL_GAME, game);
         }
         return game;
     }
 
     private Game createDefaultGame() {
-        return new Game("single", Sign.CROSS.getSign(), Difficulty.EASY.getValue());
+        return new Game(Key.SINGLE_GAME_MOD, Sign.CROSS.getSign(), Difficulty.EASY.getValue());
     }
 }
