@@ -1,74 +1,59 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="en">
 <head>
-    <title>Локальная / Одиночная Игра</title>
+    <title th:text="#{game.title}">Local / Single Game</title>
     <meta charset="UTF-8"/>
-    <link rel="stylesheet"
-          href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
-    <script th:src="@{/js/localGame.js}"></script>
-    <style>
-        .winner-line {
-            position: relative;
-            overflow: hidden;
-            animation: highlightWin 0.8s forwards ease-in-out;
-        }
-        @keyframes highlightWin {
-            0%   { background-color: inherit; }
-            100% { background-color: #cfffcb; }
-        }
-    </style>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+    <link rel="stylesheet" th:href="@{/css/styles.css}"/>
 </head>
 <body>
+
+<div th:replace="~{fragments/header :: headerFrag}"></div>
+
 <div class="container">
     <section class="section">
-        <h1 class="title">Локальная / Одиночная Игра</h1>
-        <p id="status" style="font-weight:bold;">...</p>
+        <h1 class="title" th:text="#{game.mainHeading}">
+            Local / Single Game
+        </h1>
 
-        <div id="scorePanel" style="display:none; margin-bottom:1rem;">
-            <p>Счёт игрока: <span id="scoreHuman">0</span></p>
-            <p>Счёт AI: <span id="scoreAI">0</span></p>
+        <p id="status" class="has-text-weight-bold"
+           th:text="#{game.status}">
+            Status:
+        </p>
+
+        <div id="scorePanel" class="mb-1" style="display:none;">
+            <p>
+                <span th:text="#{game.scorePlayer}">Your score:</span>
+                <span id="scoreHuman">0</span>
+            </p>
+            <p>
+                <span th:text="#{game.scoreAI}">AI score:</span>
+                <span id="scoreAI">0</span>
+            </p>
         </div>
 
-        <div style="margin-top:20px;">
-            <div style="display:flex;">
-                <div id="cell0" class="box" style="width:60px;height:60px;font-size:24px;
-                     text-align:center;cursor:pointer;margin:2px;"
-                     onclick="makeMove(0,0)"></div>
-                <div id="cell1" class="box" style="width:60px;height:60px;font-size:24px;
-                     text-align:center;cursor:pointer;margin:2px;"
-                     onclick="makeMove(0,1)"></div>
-                <div id="cell2" class="box" style="width:60px;height:60px;font-size:24px;
-                     text-align:center;cursor:pointer;margin:2px;"
-                     onclick="makeMove(0,2)"></div>
-            </div>
-            <div style="display:flex;">
-                <div id="cell3" class="box" style="width:60px;height:60px;font-size:24px;
-                     text-align:center;cursor:pointer;margin:2px;"
-                     onclick="makeMove(1,0)"></div>
-                <div id="cell4" class="box" style="width:60px;height:60px;font-size:24px;
-                     text-align:center;cursor:pointer;margin:2px;"
-                     onclick="makeMove(1,1)"></div>
-                <div id="cell5" class="box" style="width:60px;height:60px;font-size:24px;
-                     text-align:center;cursor:pointer;margin:2px;"
-                     onclick="makeMove(1,2)"></div>
-            </div>
-            <div style="display:flex;">
-                <div id="cell6" class="box" style="width:60px;height:60px;font-size:24px;
-                     text-align:center;cursor:pointer;margin:2px;"
-                     onclick="makeMove(2,0)"></div>
-                <div id="cell7" class="box" style="width:60px;height:60px;font-size:24px;
-                     text-align:center;cursor:pointer;margin:2px;"
-                     onclick="makeMove(2,1)"></div>
-                <div id="cell8" class="box" style="width:60px;height:60px;font-size:24px;
-                     text-align:center;cursor:pointer;margin:2px;"
-                     onclick="makeMove(2,2)"></div>
-            </div>
-        </div>
+        <div th:insert="~{fragments/board :: boardFrag}"></div>
 
         <br/>
-        <button class="button" id="restartBtn" onclick="restartLocal()">Рестарт</button>
-        <a class="button" href="/">Вернуться на главную</a>
+        <button class="button btn-w200" id="restartBtn"
+                onclick="restartLocal()"
+                th:text="#{game.restart}">
+            Restart
+        </button>
+        <a class="button btn-w200" href="/"
+           th:text="#{game.goHome}">
+            Back to Home
+        </a>
     </section>
 </div>
+<div id="i18nLocalGame"
+     th:attr="
+       data-turn=#{game.turn},
+       data-winner=#{game.winner},
+       data-draw=#{game.draw},
+       data-restart=#{game.restart}
+     ">
+</div>
+<script th:src="@{/js/localGame.js}"></script>
 </body>
 </html>

@@ -1,112 +1,130 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="en">
 <head>
-    <title>Сетевые игры</title>
+    <title th:text="#{online.title}">Online Games</title>
     <meta charset="UTF-8"/>
-
     <link rel="stylesheet"
           href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
-
-    <!-- SockJS + STOMP -->
-    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
-
-    <script th:src="@{/js/online.js}"></script>
+    <link rel="stylesheet" th:href="@{/css/styles.css}"/>
 </head>
 <body>
-<div class="container" style="margin-top:1rem;">
+
+<div th:replace="~{fragments/header :: headerFrag}"></div>
+
+<div class="container mt-1">
     <section class="section">
-        <h1 class="title">Сетевые игры</h1>
+        <h1 class="title" th:text="#{online.heading}">
+            Online Games
+        </h1>
 
-        <input type="hidden" id="userIdHidden" th:value="${session.userId}" />
+        <input type="hidden" id="userIdHidden" th:value="${session.userId}"/>
 
-        <p>Ваш ник:
-            <span id="myNickSpan" th:text="${session.nick}"
-                  class="has-text-weight-bold">
+        <p>
+            <span th:text="#{online.yourNick}">Your nickname:</span>
+            <span id="myNickSpan" th:text="${session.nick}" class="has-text-weight-bold">
                 Guest
             </span>
         </p>
 
-        <form action="/create-online" method="post"
-              style="margin-bottom:1rem; margin-top:1rem">
-            <button class="button is-primary" type="submit" style="width:200px;">
-                Создать новую игру
+        <form action="/create-online" method="post" class="mb-1 mt-1">
+            <button class="button is-primary btn-w200"
+                    type="submit"
+                    th:text="#{online.createGame}">
+                Create new game
             </button>
         </form>
 
-        <table class="table is-fullwidth is-hoverable" style="margin-bottom:1rem;">
+        <table class="table is-fullwidth is-hoverable mb-1">
             <thead>
             <tr>
                 <th>ID</th>
-                <th>Player X</th>
-                <th>Player O</th>
-                <th>Статус</th>
-                <th>Действие</th>
+                <th th:text="#{online.playerX}">Player X</th>
+                <th th:text="#{online.playerO}">Player O</th>
+                <th th:text="#{online.status}">Status</th>
+                <th th:text="#{online.action}">Action</th>
             </tr>
             </thead>
             <tbody id="gamesBody">
             <tr th:each="g : ${games}">
                 <td th:text="${g.gameId}">?</td>
-
                 <td th:classappend="${(g.creatorId == session.userId && g.playerXId == g.creatorId)}
                      ? 'has-text-weight-bold':''"
-                    th:text="${g.playerXDisplay}">
+                    th:text="${g.playerXDisplay}">X-Player
                 </td>
                 <td th:classappend="${(g.creatorId == session.userId && g.playerOId == g.creatorId)}
                      ? 'has-text-weight-bold':''"
-                    th:text="${g.playerODisplay}">
+                    th:text="${g.playerODisplay}">O-Player
                 </td>
-
                 <td>
-                    <span th:if="${g.waitingForSecondPlayer}">Ожидает второго</span>
-                    <span th:if="${!g.waitingForSecondPlayer}">Игра идёт</span>
+                    <span th:if="${g.waitingForSecondPlayer}"
+                          th:text="#{online.waiting}">Waiting for second</span>
+                    <span th:if="${!g.waitingForSecondPlayer}"
+                          th:text="#{online.inProgress}">Game in progress</span>
                 </td>
                 <td>
                     <span th:if="${g.waitingForSecondPlayer
                                  && (session.userId == g.playerXId
                                      || session.userId == g.playerOId)}">
-                        <a class="button is-small is-link"
-                           th:href="@{/onlineGame(gameId=${g.gameId})}">
-                           Перейти
+                        <a class="button is-small is-link btn-w200"
+                           th:href="@{/onlineGame(gameId=${g.gameId})}"
+                           th:text="#{online.go}">
+                            Go
                         </a>
                     </span>
                     <span th:if="${g.waitingForSecondPlayer
                                  && !(session.userId == g.playerXId
                                       || session.userId == g.playerOId)}">
-                        <a class="button is-small is-info"
-                           th:href="@{/join-online(gameId=${g.gameId})}">
-                           Присоединиться
+                        <a class="button is-small is-info btn-w200"
+                           th:href="@{/join-online(gameId=${g.gameId})}"
+                           th:text="#{online.join}">
+                            Join
                         </a>
                     </span>
-
                     <span th:if="${!g.waitingForSecondPlayer
                                  && (session.userId == g.playerXId
                                      || session.userId == g.playerOId)}">
-                        <a class="button is-small is-link"
-                           th:href="@{/onlineGame(gameId=${g.gameId})}">
-                           Перейти
+                        <a class="button is-small is-link btn-w200"
+                           th:href="@{/onlineGame(gameId=${g.gameId})}"
+                           th:text="#{online.go}">
+                            Go
                         </a>
                     </span>
                     <span th:if="${!g.waitingForSecondPlayer
                                  && !(session.userId == g.playerXId
-                                      || session.userId == g.playerOId)}">
-                        Идёт игра
+                                      || session.userId == g.playerOId)}"
+                          th:text="#{online.gameInProgress}">
+                        In progress
                     </span>
                 </td>
             </tr>
             </tbody>
         </table>
 
-        <div style="display:flex; gap:1rem; margin-top:2rem;">
-            <a class="button is-link" href="/" style="width:200px;">
-                К выбору режима
+        <div class="flex gap-1rem mt-2rem">
+            <a class="button is-link btn-w200"
+               href="/"
+               th:text="#{online.goToHome}">
+                Back to mode selection
             </a>
-            <button class="button is-info" style="width:200px;"
-                    onclick="forceRefresh()">
-                Обновить список игр
+            <button class="button is-info btn-w200"
+                    onclick="forceRefresh()"
+                    th:text="#{online.refresh}">
+                Refresh game list
             </button>
         </div>
     </section>
 </div>
+<div id="i18nOnline"
+     th:attr="
+    data-waiting=#{online.waiting},
+    data-progress=#{online.inProgress},
+    data-go=#{online.go},
+    data-join=#{online.join},
+    data-inprogress=#{online.gameInProgress}
+  ">
+</div>
+<script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+<script th:src="@{/js/online.js}"></script>
 </body>
 </html>

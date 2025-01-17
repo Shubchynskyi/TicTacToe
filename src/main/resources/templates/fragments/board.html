@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<body>
+<div th:fragment="boardFrag">
+    <div class="board-mtop">
+        <div class="flex-row">
+            <div id="cell0" class="box cell-60" onclick="makeMove(0,0)"></div>
+            <div id="cell1" class="box cell-60" onclick="makeMove(0,1)"></div>
+            <div id="cell2" class="box cell-60" onclick="makeMove(0,2)"></div>
+        </div>
+        <div class="flex-row">
+            <div id="cell3" class="box cell-60" onclick="makeMove(1,0)"></div>
+            <div id="cell4" class="box cell-60" onclick="makeMove(1,1)"></div>
+            <div id="cell5" class="box cell-60" onclick="makeMove(1,2)"></div>
+        </div>
+        <div class="flex-row">
+            <div id="cell6" class="box cell-60" onclick="makeMove(2,0)"></div>
+            <div id="cell7" class="box cell-60" onclick="makeMove(2,1)"></div>
+            <div id="cell8" class="box cell-60" onclick="makeMove(2,2)"></div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

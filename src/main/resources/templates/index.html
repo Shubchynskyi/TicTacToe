@@ -1,114 +1,101 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="en">
 <head>
-    <title>TicTacToe — Главная</title>
+    <title th:text="#{index.title}">TicTacToe - Home</title>
     <meta charset="UTF-8"/>
-
-    <!-- Bulma CSS -->
-    <link rel="stylesheet"
-          href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
-
-    <!-- home.js -->
-    <script th:src="@{/js/home.js}"></script>
-
-    <style>
-        .symbol-button {
-            width:60px;
-            text-align:center;
-            cursor:pointer;
-        }
-        .symbol-button.selected {
-            background-color: #48c774 !important;
-            color: #fff;
-        }
-    </style>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css"/>
+    <link rel="stylesheet" th:href="@{/css/styles.css}"/>
 </head>
 <body>
-<div class="container" style="margin-top:1rem;">
-    <section class="section">
-        <h1 class="title">Крестики-Нолики (Главная)</h1>
 
-        <p>Ваш ник:
+<div th:replace="~{fragments/header :: headerFrag}"></div>
+
+<div class="container mt-1">
+    <section class="section">
+        <h1 class="title" th:text="#{index.mainHeading}">
+            TicTacToe (Home)
+        </h1>
+
+        <p>
+            <span th:text="#{index.yourNick}">Your nickname:</span>
             <span th:text="${session.nick}">Guest</span>
-            <label for="nickInput"></label><input id="nickInput" type="text" placeholder="Новый ник"
-                                                  style="margin-left:10px;"/>
-            <button class="button is-small is-info" style="margin-left:5px;"
-                    onclick="changeNickname()">
-                Сменить ник
+            <label for="nickInput"></label>
+            <input id="nickInput" type="text"
+                   th:placeholder="#{index.newNick}"
+                   placeholder="New nickname"
+                   class="ml-10"/>
+            <button class="button is-small is-info btn-w200 ml-5"
+                    onclick="changeNickname()"
+                    th:text="#{index.changeNick}">
+                Change nickname
             </button>
         </p>
 
-        <form action="/start" method="get" style="margin-top:1rem;" id="gameForm">
-
+        <form action="/start" method="get" class="mt-1" id="gameForm">
             <div class="field">
-                <label class="label">Режим игры:</label>
+                <label class="label" th:text="#{index.gameMode}">
+                    Game mode:
+                </label>
                 <div class="control">
                     <label class="radio">
                         <input type="radio" name="gameMode" value="single"
                                onclick="onGameModeChange('single')"
                                th:checked="${lastSymbol != null}">
-                        Одиночная (против AI)
+                        <span th:text="#{index.singlePlayer}">Single (vs AI)</span>
                     </label>
-                    <label class="radio" style="margin-left:1rem;">
+                    <label class="radio ml-1">
                         <input type="radio" name="gameMode" value="local"
                                onclick="onGameModeChange('local')"
                                th:checked="${lastSymbol == null}">
-                        Локальная (2 игрока)
+                        <span th:text="#{index.localGame}">Local (2 players)</span>
                     </label>
                 </div>
             </div>
 
-            <div id="singleSettings" style="margin-top:1rem;">
-                <div class="field" style="margin-bottom:1rem;">
-                    <label class="label">Символ:</label>
-                    <div class="control" style="display:flex; gap:1rem;">
-                        <!-- Button X -->
-                        <div id="btnX" class="button symbol-button"
-                             onclick="selectSymbol('X')">X</div>
-                        <!-- Button O -->
-                        <div id="btnO" class="button symbol-button"
-                             onclick="selectSymbol('O')">O</div>
-
-                        <!-- Hidden playerSymbol -->
+            <div id="singleSettings" class="mt-1">
+                <div class="field mb-1">
+                    <label class="label" th:text="#{index.symbol}">Symbol:</label>
+                    <div class="control symbol-gap">
+                        <div id="btnX" class="button symbol-button" onclick="selectSymbol('X')">X</div>
+                        <div id="btnO" class="button symbol-button" onclick="selectSymbol('O')">O</div>
                         <input type="hidden" name="playerSymbol"
                                id="playerSymbolHidden"
-                               th:value="${lastSymbol != null ? lastSymbol : 'X'}">
+                               th:value="${lastSymbol != null ? lastSymbol : 'X'}"/>
                     </div>
                 </div>
 
                 <div class="field">
-                    <label class="label">Сложность:</label>
+                    <label class="label" th:text="#{index.difficulty}">Difficulty:</label>
                     <div class="control">
                         <div class="select">
-                            <label>
-                                <select name="difficulty">
-                                    <option th:each="diff : ${difficulties}"
-                                            th:value="${diff.value}"
-                                            th:text="${diff.value}"
-                                            th:selected="${diff.value == lastDiff}">
-                                    </option>
-                                </select>
-                            </label>
+                            <select name="difficulty">
+                                <option th:each="diff : ${difficulties}"
+                                        th:value="${diff.value}"
+                                        th:text="${diff.value}"
+                                        th:selected="${diff.value == lastDiff}">
+                                </option>
+                            </select>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- "New game button" -->
-            <div class="field" style="margin-top:1.5rem;">
-                <button class="button is-primary" type="submit"
-                        style="width:100px;">
-                    Новая игра
+            <div class="field mt-1">
+                <button class="button is-primary btn-w200"
+                        type="submit"
+                        th:text="#{index.newGame}">
+                    New game
                 </button>
             </div>
         </form>
 
         <br/>
-        <a class="button is-link" href="/online"
-           style="width:200px;">
-            Перейти к сетевым играм
+        <a class="button is-link btn-w200" href="/online"
+           th:text="#{index.onlineLink}">
+            Go to Online games
         </a>
     </section>
 </div>
+<script th:src="@{/js/home.js}"></script>
 </body>
 </html>
