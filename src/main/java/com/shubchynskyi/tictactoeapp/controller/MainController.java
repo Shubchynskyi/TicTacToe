@@ -22,6 +22,7 @@ public class MainController {
 
     @GetMapping(Route.INDEX)
     public String index(HttpSession session, Model model) {
+        session.removeAttribute(SessionAttributes.LOCAL_GAME);
         initializeSessionAttributes(session);
         addModelAttributes(model, session);
         return View.INDEX;

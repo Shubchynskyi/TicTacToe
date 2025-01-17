@@ -25,10 +25,15 @@ public class GameController {
         session.setAttribute(SessionAttributes.LAST_SYMBOL, playerSymbol);
         session.setAttribute(SessionAttributes.LAST_DIFF, difficulty);
 
-        Game game = new Game(gameMode, playerSymbol, difficulty);
-        session.setAttribute(SessionAttributes.LOCAL_GAME, game);
+        Game existing = (Game) session.getAttribute(SessionAttributes.LOCAL_GAME);
 
-        model.addAttribute(SessionAttributes.LOCAL_GAME, game);
+        if (existing == null) {
+            Game newGame = new Game(gameMode, playerSymbol, difficulty);
+            session.setAttribute(SessionAttributes.LOCAL_GAME, newGame);
+            model.addAttribute(SessionAttributes.LOCAL_GAME, newGame);
+        } else {
+            model.addAttribute(SessionAttributes.LOCAL_GAME, existing);
+        }
         return View.GAME;
     }
 }
