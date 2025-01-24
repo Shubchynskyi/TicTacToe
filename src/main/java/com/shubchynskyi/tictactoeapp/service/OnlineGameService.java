@@ -6,7 +6,7 @@ import com.shubchynskyi.tictactoeapp.constants.WebSocketCommand;
 import com.shubchynskyi.tictactoeapp.domain.Game;
 import com.shubchynskyi.tictactoeapp.domain.OnlineGame;
 import com.shubchynskyi.tictactoeapp.enums.Sign;
-import jakarta.annotation.PostConstruct;
+import lombok.Getter;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
@@ -19,62 +19,13 @@ import java.util.concurrent.atomic.AtomicLong;
 @Service
 public class OnlineGameService {
 
+    @Getter
     private final ConcurrentHashMap<Long, OnlineGame> games = new ConcurrentHashMap<>();
     private final AtomicLong idGen = new AtomicLong(1000);
+
+    @Getter
     private final Map<Long, TimerHandles> gameTimers = new ConcurrentHashMap<>();
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
-
-    private record TimerHandles(ScheduledFuture<?> warningFuture, ScheduledFuture<?> closeFuture) {
-        public void cancelAll(boolean mayInterruptIfRunning) {
-            if (warningFuture != null) {
-                warningFuture.cancel(mayInterruptIfRunning);
-            }
-            if (closeFuture != null) {
-                closeFuture.cancel(mayInterruptIfRunning);
-            }
-        }
-    }
-
-    // -----------------------------------------------------------
-    //  todo удалить после тестов
-    // -----------------------------------------------------------
-    public void startPeriodicLogging(int periodInSeconds) {
-        Runnable logTask = () -> {
-            try {
-                List<OnlineGame> currentGames = listGames();
-                long now = System.currentTimeMillis();
-
-                System.err.println("=== Current online games (" + currentGames.size() + ") ===");
-                for (OnlineGame g : currentGames) {
-                    String xName = (g.getPlayerXDisplay() == null) ? "(empty)" : g.getPlayerXDisplay();
-                    String oName = (g.getPlayerODisplay() == null) ? "(empty)" : g.getPlayerODisplay();
-                    boolean finished = g.isFinished();
-
-                    long timeLeftSec = 0;
-                    if (g.getCloseTimeMillis() > now) {
-                        timeLeftSec = (g.getCloseTimeMillis() - now) / 1000;
-                    }
-
-                    System.err.printf("Game #%d | X=%s, O=%s, finished=%s, timeLeft=%ds%n",
-                            g.getGameId(), xName, oName, finished, timeLeftSec);
-                }
-                System.err.println("==============================================");
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        };
-
-        scheduler.scheduleAtFixedRate(logTask, 0, periodInSeconds, TimeUnit.SECONDS);
-    }
-
-    // -----------------------------------------------------------
-    //  todo удалить после тестов
-    // -----------------------------------------------------------
-    @PostConstruct
-    public void initLogging() {
-        startPeriodicLogging(5);
-    }
-
 
 
     public long createGame(String userId, String displayName) {
@@ -169,10 +120,6 @@ public class OnlineGameService {
         }
 
         long totalSeconds = minutes * 60L;
-        long now = System.currentTimeMillis();
-        long closeTimeMillis = now + totalSeconds * 1000;
-        onlineGame.setCloseTimeMillis(closeTimeMillis);
-
         long warningSeconds = Math.max(totalSeconds - 30, 0);
 
         ScheduledFuture<?> warningFuture = scheduler.schedule(() -> {
@@ -251,14 +198,12 @@ public class OnlineGameService {
         onlineGame.setScoreO(0);
         onlineGame.setFinished(false);
         onlineGame.setWinnerDisplay(null);
-        onlineGame.setCloseTimeMillis(0);
     }
 
     private void resetGameWithoutScores(OnlineGame onlineGame) {
         onlineGame.getGame().resetBoard();
         onlineGame.setFinished(false);
         onlineGame.setWinnerDisplay(null);
-        onlineGame.setCloseTimeMillis(0);
     }
 
     private void switchPlayers(OnlineGame onlineGame) {

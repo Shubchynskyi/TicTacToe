@@ -68,7 +68,7 @@ public class Game {
         }
     }
 
-    private void initStrategy() {
+    void initStrategy() {
         switch (difficulty) {
             case MEDIUM:
                 strategy = new MediumDifficultyStrategy();
@@ -86,6 +86,9 @@ public class Game {
 
     public void makeMove(int row, int col) {
         if (gameOver) return;
+        if (row < 0 || row > 2 || col < 0 || col > 2) {
+            return;
+        }
         int idx = row * 3 + col;
         if (board[idx] == Sign.EMPTY) {
             board[idx] = currentPlayer;
@@ -116,7 +119,7 @@ public class Game {
         currentPlayer = (currentPlayer == Sign.CROSS) ? Sign.NOUGHT : Sign.CROSS;
     }
 
-    private void checkWinOrDraw() {
+    void checkWinOrDraw() {
         if (gameOver) return;
 
         Sign wSign = checkWinSign();

@@ -11,7 +11,6 @@ import static com.shubchynskyi.tictactoeapp.constants.Key.ONLINE_GAME_MOD;
 @Setter
 public class OnlineGame {
 
-    public static final String EASY = "easy";
     private long gameId;
     private Game game;
 
@@ -29,13 +28,6 @@ public class OnlineGame {
 
     private int scoreX;
     private int scoreO;
-
-    // Новое поле: когда истечёт время (в мс, System.currentTimeMillis())
-    // Если 0 — значит таймер не активен
-    private long closeTimeMillis; // // todo remove after tests
-
-//    public OnlineGame() { //todo ?
-//    }
 
     public OnlineGame(long gameId, String creatorId, String creatorDisplay) {
         this.gameId = gameId;
@@ -62,6 +54,5 @@ public class OnlineGame {
         this.winnerDisplay = null;
         this.scoreX = 0;
         this.scoreO = 0;
-        this.closeTimeMillis = 0; // todo remove after tests
     }
 }

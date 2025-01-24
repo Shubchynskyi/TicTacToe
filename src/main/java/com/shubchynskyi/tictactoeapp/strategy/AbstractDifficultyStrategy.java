@@ -10,12 +10,12 @@ import java.util.stream.IntStream;
 
 public abstract class AbstractDifficultyStrategy implements DifficultyStrategy {
 
-    private static final int FIELD_SIZE = 9;
+    static final int FIELD_SIZE = 9;
     private static final List<Integer> PRIORITY_CELLS = List.of(4, 0, 2, 6, 8);
     private static final int CENTER_CELL_INDEX = 4;
     private static final List<Integer> CORNER_CELLS = List.of(0, 2, 6, 8);
     private static final List<Integer> NOT_CORNER_CELLS = List.of(1, 3, 5, 7);
-    private static final int EMPTY_SIZE_FOR_CORNER_TRAP = 6; // special logic
+    private static final int EMPTY_SIZE_FOR_CORNER_TRAP = 6;
 
     private final Random random = new Random();
     @Override
@@ -95,7 +95,7 @@ public abstract class AbstractDifficultyStrategy implements DifficultyStrategy {
                 .collect(Collectors.toList());
     }
 
-    private boolean isPlayerInOppositeCorners(Game game) {
+    boolean isPlayerInOppositeCorners(Game game) {
         Sign playerSign = game.getPlayerSign();
         return (isCellSign(game, 0, playerSign) && isCellSign(game, 8, playerSign)) ||
                 (isCellSign(game, 2, playerSign) && isCellSign(game, 6, playerSign));
