@@ -3,9 +3,8 @@ set -e
 
 JAR_NAME="tictactoe-app-1.0.jar"
 FINAL_IMAGE="tictactoe-app-final"
-APP_CONTAINER="tictactoe-app-running"
+APP_CONTAINER="tictactoe-app"
 NETWORK_NAME="tictactoe-app-net"
-NGINX_CONTAINER="webserver"
 
 echo "Removing old container if it exists..."
 docker rm -f "$APP_CONTAINER" >/dev/null 2>&1 || true
@@ -32,9 +31,6 @@ docker run -d \
   --name "$APP_CONTAINER" \
   --network "$NETWORK_NAME" \
   "$FINAL_IMAGE"
-
-echo "Connecting Nginx container to the application network..."
-docker network connect "$NETWORK_NAME" "$NGINX_CONTAINER" || echo "Nginx is already connected to the network"
 
 echo "Application is starting in the background."
 rm -f "$JAR_NAME"
