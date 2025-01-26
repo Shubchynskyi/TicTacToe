@@ -17,11 +17,11 @@
         </h1>
 
         <div class="mb-1">
-            <label class="label" th:text="#{index.yourNick}">
+            <label class="nickname" th:text="#{index.yourNick}">
                 Your nickname:
             </label>
             <p>
-                <span th:text="${session.nick}">Guest</span>
+                <span id="nick" th:text="${session.nick}">Guest</span>
             </p>
             <div class="mt-05">
                 <label for="nickInput"></label>

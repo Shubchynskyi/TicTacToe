@@ -10,7 +10,7 @@ window.addEventListener('load', () => {
 
     const params = new URLSearchParams(window.location.search);
     gameId = params.get('gameId');
-    document.getElementById('gid').innerText = gameId;
+    document.getElementById('gameId').innerText = gameId;
 
     currentNick = document.getElementById('nick').innerText;
     const uidElem = document.getElementById('userIdHidden');
