@@ -31,7 +31,6 @@ echo "Starting application container and connecting to network $NETWORK_NAME..."
 docker run -d \
   --name "$APP_CONTAINER" \
   --network "$NETWORK_NAME" \
-  -p 8080:8080 \
   "$FINAL_IMAGE"
 
 echo "Connecting Nginx container to the application network..."
