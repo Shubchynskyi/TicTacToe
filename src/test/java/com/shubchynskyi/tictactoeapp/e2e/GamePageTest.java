@@ -49,7 +49,7 @@ public class GamePageTest extends BaseE2ETest {
             fail("Two cells were not occupied after making a move");
         }
 
-        String cell00 = gamePage.getBoard().getCellText(0, 0).trim();
+        String cell00 = gamePage.getBoard().getCellText(0, 1).trim();
         assertFalse(cell00.isEmpty(), "Cell (0,0) should be occupied by the player");
 
         boolean secondCellOccupied = false;
