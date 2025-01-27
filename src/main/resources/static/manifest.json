@@ -1,0 +1,21 @@
+{
+  "name": "TicTacToe",
+  "short_name": "TicTacToe",
+  "start_url": "/?source=pwa",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "description": "Play TicTacToe in your browser!",
+  "icons": [
+    {
+      "src": "/images/icon_pwa/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/images/icon_pwa/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
