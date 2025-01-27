@@ -28,7 +28,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         registry.addEndpoint(wsEndpoint)
-//                .setAllowedOrigins("https://tic-tac-toe.shubchynskyi.pp.ua") // todo rm
+                .setAllowedOrigins("https://tic-tac-toe.shubchynskyi.pp.ua") // todo to config
                 .withSockJS();
     }
 
