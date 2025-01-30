@@ -1,34 +1,28 @@
 package com.shubchynskyi.tictactoeapp.e2e.pageobjects;
 
-
 import lombok.Getter;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
-
 import java.time.Duration;
 
-
 public class IndexPage {
-
     private final WebDriver driver;
-
     @Getter
     private final HeaderFragment header;
     private final WebDriverWait wait;
 
+    // Селекторы
     private final By nicknameInput = By.id("nickInput");
     private final By currentNick = By.id("nick");
     private final By changeNickButton = By.xpath("//button[contains(@onclick,'changeNickname()')]");
-
-    private final By singleModeRadio = By.xpath("//input[@type='radio' and @value='single']");
-    private final By localModeRadio = By.xpath("//input[@type='radio' and @value='local']");
-
+    private final By singleModeButton = By.id("btnSingle");
+    private final By localModeButton = By.id("btnLocal");
     private final By symbolXButton = By.id("btnX");
     private final By symbolOButton = By.id("btnO");
-
-    private final By difficultySelect = By.xpath("//select[@name='difficulty']");
+    private final By nextDifficultyButton = By.xpath("//button[contains(@onclick,'nextDifficulty()')]");
+    private final By difficultyDisplay = By.id("diffDisplay");
     private final By newGameButton = By.xpath("//button[@type='submit' and @class='button is-primary btn-w200 mt-1']");
 
     public IndexPage(WebDriver driver) {
@@ -37,6 +31,7 @@ public class IndexPage {
         this.wait = new WebDriverWait(driver, Duration.ofSeconds(3));
     }
 
+    // Методы взаимодействия
     public void setNickname(String newNick) {
         driver.findElement(nicknameInput).clear();
         driver.findElement(nicknameInput).sendKeys(newNick);
@@ -44,13 +39,11 @@ public class IndexPage {
     }
 
     public void selectSingleMode() {
-        wait.until(ExpectedConditions.elementToBeClickable(singleModeRadio));
-        driver.findElement(singleModeRadio).click();
+        wait.until(ExpectedConditions.elementToBeClickable(singleModeButton)).click();
     }
 
     public void selectLocalMode() {
-        wait.until(ExpectedConditions.elementToBeClickable(localModeRadio));
-        driver.findElement(localModeRadio).click();
+        wait.until(ExpectedConditions.elementToBeClickable(localModeButton)).click();
     }
 
     public void chooseSymbolX() {
@@ -61,8 +54,14 @@ public class IndexPage {
         driver.findElement(symbolOButton).click();
     }
 
-    public void selectDifficulty(String difficultyValue) {
-        driver.findElement(difficultySelect).sendKeys(difficultyValue);
+    public void selectDifficulty(String targetDifficulty) {
+        while (true) {
+            String currentDifficulty = driver.findElement(difficultyDisplay).getText();
+            if (currentDifficulty.equals(targetDifficulty)) {
+                break; // Выходим из цикла, если сложность совпадает
+            }
+            driver.findElement(nextDifficultyButton).click(); // Кликаем на кнопку "следующая сложность"
+        }
     }
 
     public void clickNewGame() {
