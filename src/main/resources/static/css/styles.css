@@ -1,79 +1,65 @@
+/* General Margins */
 .mt-1 {
     margin-top: 1rem;
 }
-
 .mt-05 {
     margin-top: 0.5rem;
 }
-
 .mb-1 {
     margin-bottom: 1rem;
 }
-
-.ml-1 {
-    margin-left: 1rem;
-}
-
 .ml-5 {
     margin-left: 5px;
 }
-
 .ml-10 {
     margin-left: 10px;
 }
-
-.mt-20 {
-    margin-top: 20px;
-}
-
 .mt-2rem {
     margin-top: 2rem;
 }
 
+/* Language Bar */
 .lang-bar {
-    margin-top: 10px;
-    margin-left: 10px;
+    margin: 10px 0 0 10px;
 }
-
 .a-icon {
     margin-right: 8px;
 }
-
 .img-icon {
     width: 24px;
     height: auto;
 }
 
+/* Buttons */
 .btn-w200 {
     width: 200px;
 }
-
 .btn-w100 {
     width: 100px;
 }
 
-/* Дополнительный класс для поля ввода ника (ширина 200px) */
+/* Input Fields */
 .nick-input {
     width: 200px;
 }
 
+/* Symbol Buttons */
 .symbol-button {
     width: 60px;
     text-align: center;
     cursor: pointer;
 }
-
 .symbol-button.selected {
     background-color: #48c774 !important;
     color: #fff;
 }
 
+/* Winning Line Animation */
 .winner-line {
     position: relative;
     overflow: hidden;
     animation: highlightWin 0.8s forwards ease-in-out;
 }
-
 @keyframes highlightWin {
     0% {
         background-color: inherit;
@@ -83,6 +69,7 @@
     }
 }
 
+/* Modal Window */
 .modal {
     display: none;
     position: fixed;
@@ -92,7 +79,6 @@
     bottom: 0;
     background: rgba(0, 0, 0, 0.5);
 }
-
 .modal-content {
     width: 300px;
     margin: 100px auto;
@@ -100,7 +86,6 @@
     padding: 20px;
     text-align: center;
 }
-
 .modal-btn-col {
     display: flex;
     flex-direction: column;
@@ -108,14 +93,10 @@
     align-items: center;
 }
 
+/* Game Board */
 .board-mtop {
     margin-top: 20px;
 }
-
-.flex-row {
-    display: flex;
-}
-
 .cell-60 {
     width: 60px;
     height: 60px;
@@ -126,8 +107,110 @@
     cursor: pointer;
     margin: 3px;
 }
-
 .box.cell-60 {
     padding: 0 !important;
     margin-bottom: 0 !important;
+}
+
+/* Game List */
+.game-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: flex-start;
+}
+.game-col {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 100px;
+}
+.game-col strong {
+    margin-right: 0.3rem;
+}
+
+/* Responsive Design */
+@media (max-width: 767px) {
+    .game-col {
+        flex: 0 0 100%;
+    }
+}
+@media (min-width: 768px) and (max-width: 1023px) {
+    .game-row {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.5rem;
+    }
+    .col-id {
+        grid-column: span 2;
+    }
+    .col-x,
+    .col-o {
+        grid-column: span 1;
+    }
+    .col-status,
+    .col-action {
+        grid-column: span 1;
+    }
+}
+@media (min-width: 1024px) {
+    .col-id {
+        flex: 0 0 110px;
+    }
+    .col-action {
+        flex: 0 0 220px;
+        text-align: right;
+    }
+    .col-x,
+    .col-o,
+    .col-status {
+        flex: 1 1 auto;
+        min-width: 80px;
+    }
+}
+
+/* Centered Buttons */
+.is-flex-center {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+/* Button Groups */
+.button-group {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-top: 2rem;
+}
+
+/* Difficulty Selector */
+.diff-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.5rem;
+    width: 160px;
+    flex: 0 0 160px;
+    margin: 0 auto;
+}
+#diffDisplay {
+    min-width: 80px;
+    text-align: center;
+}
+
+/* Rematch Button */
+#rematchBtn {
+    display: none;
+    width: 170px;
+}
+
+/* Game Container */
+.game-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
 }

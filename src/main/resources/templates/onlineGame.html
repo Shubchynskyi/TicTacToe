@@ -13,73 +13,65 @@
     <link rel="apple-touch-icon" href="/images/icon_pwa/apple-touch-icon.png">
 </head>
 <body>
-
 <div th:replace="~{fragments/header :: headerFrag}"></div>
-
-<div class="container mt-1">
-    <section class="section">
-        <h1 class="title">
-            <span th:text="#{onlineGame.heading}">Online Game #</span>
-            <span id="gameId"></span>
-        </h1>
-        <input type="hidden" id="userIdHidden" th:value="${session.userId}"/>
-
-        <p>
-            <span th:text="#{onlineGame.yourNick}">Your nickname:</span>
-            <span id="nick" class="has-text-weight-bold has-text-success"
-                  th:text="${nick}">Guest</span>
-        </p>
-
-        <div class="box mb-1">
+<section class="hero is-fullheight is-flex is-flex-direction-column is-align-items-center is-justify-content-center">
+    <div class="hero-body">
+        <div class="container has-text-centered">
+            <h1 class="title">
+                <span th:text="#{onlineGame.heading}">Online Game #</span>
+                <span id="gameId"></span>
+            </h1>
+            <input type="hidden" id="userIdHidden" th:value="${session.userId}"/>
             <p>
-                <span th:text="#{onlineGame.yourSymbol}">Your symbol:</span>
-                <span id="yourSymbol" class="has-text-weight-bold"></span>
+                <span th:text="#{onlineGame.yourNick}">Your nickname:</span>
+                <span id="nick" class="has-text-weight-bold has-text-success"
+                      th:text="${nick}">Guest</span>
             </p>
-            <p>
-                <span th:text="#{onlineGame.playerX}">Player X:</span>
-                <span id="playerX">X</span>
-                (<span th:text="#{onlineGame.score}">score</span>:
-                <span id="scoreX" class="has-text-weight-bold">0</span>)
-                vs
-                <span th:text="#{onlineGame.playerO}">Player O:</span>
-                <span id="playerO">O</span>
-                (<span th:text="#{onlineGame.score}">score</span>:
-                <span id="scoreO" class="has-text-weight-bold">0</span>)
-            </p>
-
-            <p id="turnInfoEl" class="is-italic" style="margin-top:0.5rem;"></p>
-        </div>
-
-        <div style="display: flex; gap:1rem; align-items: flex-start;">
-            <div th:insert="~{fragments/board :: boardFrag}"></div>
-
-            <div style="display: flex; flex-direction: column; gap:1rem;">
+            <div class="box mb-1">
+                <p>
+                    <span th:text="#{onlineGame.yourSymbol}">Your symbol:</span>
+                    <span id="yourSymbol" class="has-text-weight-bold"></span>
+                </p>
+                <p>
+                    <span th:text="#{onlineGame.playerX}">Player X:</span>
+                    <span id="playerX">X</span>
+                    ( <span th:text="#{onlineGame.score}">score</span>:
+                    <span id="scoreX" class="has-text-weight-bold">0</span> )
+                    vs
+                    <span th:text="#{onlineGame.playerO}">Player O:</span>
+                    <span id="playerO">O</span>
+                    ( <span th:text="#{onlineGame.score}">score</span>:
+                    <span id="scoreO" class="has-text-weight-bold">0</span> )
+                </p>
+                <p id="turnInfoEl" class="is-italic mt-05"></p>
+            </div>
+            <!-- Board and Rematch -->
+            <div class="game-container">
+                <div th:insert="~{fragments/board :: boardFrag}"></div>
                 <button id="rematchBtn"
                         class="button is-warning"
-                        style="display:none;"
                         onclick="rematch()"
                         th:text="#{onlineGame.rematch}">
                     Rematch
                 </button>
             </div>
+            <!-- "Leave" / "Back to list" -->
+            <div class="button-group">
+                <button class="button is-danger btn-w200"
+                        onclick="showCreatorLeaveModal()"
+                        th:text="#{onlineGame.leave}">
+                    Leave the game
+                </button>
+                <a class="button is-link btn-w200"
+                   href="/online"
+                   th:text="#{onlineGame.backToList}">
+                    Back to list
+                </a>
+            </div>
         </div>
-
-        <br/>
-        <div style="display:flex; gap:1rem; width:400px;">
-            <button class="button is-danger btn-w200"
-                    onclick="showCreatorLeaveModal()"
-                    th:text="#{onlineGame.leave}">
-                Leave the game
-            </button>
-            <a class="button is-link btn-w200"
-               href="/online"
-               th:text="#{onlineGame.backToList}">
-                Back to list
-            </a>
-        </div>
-    </section>
-</div>
-
+    </div>
+</section>
+<!-- Modal -->
 <div id="timeLeft30Modal" class="modal">
     <div class="modal-content">
         <h3 class="title is-4" th:text="#{onlineGame.timeLeft}">30 seconds left!</h3>
@@ -99,12 +91,9 @@
         </div>
     </div>
 </div>
-
 <div id="sessionClosedModal" class="modal">
     <div class="modal-content">
-        <h3 class="title is-4" th:text="#{onlineGame.sessionClosed}">
-            Session closed
-        </h3>
+        <h3 class="title is-4" th:text="#{onlineGame.sessionClosed}">Session closed</h3>
         <p>
             <span th:text="#{onlineGame.returnIn}">Returning in</span>
             <span id="closeTimer">5</span>
@@ -118,7 +107,6 @@
         </button>
     </div>
 </div>
-
 <div id="creatorLeaveModal" class="modal">
     <div class="modal-content">
         <h3 class="title is-4" th:text="#{onlineGame.leaveGame}">Leaving the game</h3>

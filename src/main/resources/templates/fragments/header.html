@@ -2,20 +2,29 @@
 <html xmlns:th="http://www.thymeleaf.org" lang="en">
 <body>
 <header th:fragment="headerFrag">
-    <div class="lang-bar">
-        <a href="javascript:void(0);" onclick="changeLanguage('en');" class="a-icon">
-            <img th:src="@{/images/icon_lang/en-icon.png}" alt="EN" class="img-icon">
-        </a>
-        <a href="javascript:void(0);" onclick="changeLanguage('de');" class="a-icon">
-            <img th:src="@{/images/icon_lang/de-icon.png}" alt="DE" class="img-icon">
-        </a>
-        <a href="javascript:void(0);" onclick="changeLanguage('ua');" class="a-icon">
-            <img th:src="@{/images/icon_lang/ua-icon.png}" alt="UA" class="img-icon">
-        </a>
-        <a href="javascript:void(0);" onclick="changeLanguage('ru');" class="a-icon">
-            <img th:src="@{/images/icon_lang/ru-icon.png}" alt="RU" class="img-icon">
-        </a>
-    </div>
+    <nav class="navbar"
+         style="background-color: #3a3a3a; padding: 0.5rem; display: flex; justify-content: space-between; align-items: center;">
+
+        <div style="margin-left: 1rem; font-weight: bold; color: #fff;">
+            TicTacToe
+        </div>
+
+        <div style="margin-right: 1rem;">
+            <a href="javascript:void(0);" onclick="changeLanguage('en');" style="margin-right: 0.5rem;">
+                <img th:src="@{/images/icon_lang/en-icon.png}" alt="EN" class="img-icon">
+            </a>
+            <a href="javascript:void(0);" onclick="changeLanguage('de');" style="margin-right: 0.5rem;">
+                <img th:src="@{/images/icon_lang/de-icon.png}" alt="DE" class="img-icon">
+            </a>
+            <a href="javascript:void(0);" onclick="changeLanguage('ua');" style="margin-right: 0.5rem;">
+                <img th:src="@{/images/icon_lang/ua-icon.png}" alt="UA" class="img-icon">
+            </a>
+            <a href="javascript:void(0);" onclick="changeLanguage('ru');">
+                <img th:src="@{/images/icon_lang/ru-icon.png}" alt="RU" class="img-icon">
+            </a>
+        </div>
+    </nav>
+
     <script>
         function changeLanguage(lang) {
             const url = new URL(window.location.href);

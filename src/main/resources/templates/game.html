@@ -13,45 +13,46 @@
     <link rel="apple-touch-icon" href="/images/icon_pwa/apple-touch-icon.png">
 </head>
 <body>
-
 <div th:replace="~{fragments/header :: headerFrag}"></div>
-
-<div class="container">
-    <section class="section">
-        <h1 class="title" th:text="#{game.mainHeading}">
-            Local / Single Game
-        </h1>
-
-        <p id="status" class="has-text-weight-bold"
-           th:text="#{game.status}">
-            Status:
-        </p>
-
-        <div id="scorePanel" class="mb-1" style="display:none;">
-            <p>
-                <span th:text="#{game.scorePlayer}">Your score:</span>
-                <span id="scoreHuman">0</span>
+<section class="hero is-fullheight is-flex is-flex-direction-column is-align-items-center is-justify-content-center">
+    <div class="hero-body">
+        <div class="container has-text-centered">
+            <h1 class="title" th:text="#{game.mainHeading}">Local / Single Game</h1>
+            <p id="status" class="has-text-weight-bold"
+               th:text="#{game.status}">
+                Status:
             </p>
-            <p>
-                <span th:text="#{game.scoreAI}">AI score:</span>
-                <span id="scoreAI">0</span>
-            </p>
+
+            <div id="scorePanel" class="mb-1">
+                <p>
+                    <span th:text="#{game.scorePlayer}">Your score:</span>
+                    <span id="scoreHuman">0</span>
+                </p>
+                <p>
+                    <span th:text="#{game.scoreAI}">AI score:</span>
+                    <span id="scoreAI">0</span>
+                </p>
+            </div>
+
+            <div class="is-flex-center">
+                <div th:insert="~{fragments/board :: boardFrag}"></div>
+            </div>
+
+            <div class="button-group">
+                <button class="button btn-w200"
+                        id="restartBtn"
+                        onclick="restartLocal()"
+                        th:text="#{game.restart}">
+                    Restart
+                </button>
+                <a class="button btn-w200" href="/"
+                   th:text="#{game.goHome}">
+                    Back to Home
+                </a>
+            </div>
         </div>
-
-        <div th:insert="~{fragments/board :: boardFrag}"></div>
-
-        <br/>
-        <button class="button btn-w200" id="restartBtn"
-                onclick="restartLocal()"
-                th:text="#{game.restart}">
-            Restart
-        </button>
-        <a class="button btn-w200" href="/"
-           th:text="#{game.goHome}">
-            Back to Home
-        </a>
-    </section>
-</div>
+    </div>
+</section>
 <div id="i18nLocalGame"
      th:attr="
        data-turn=#{game.turn},

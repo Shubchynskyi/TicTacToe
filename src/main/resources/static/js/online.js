@@ -9,6 +9,7 @@ window.addEventListener('load', () => {
     connectList();
 });
 
+// WebSocket
 function connectList() {
     const sock = new SockJS('/ws');
     stompList = Stomp.over(sock);
@@ -18,12 +19,14 @@ function connectList() {
             const games = JSON.parse(msg.body);
             renderGameList(games);
         });
+    }, error => {
+        console.error("WebSocket connection error:", error);
     });
 }
 
 function renderGameList(games) {
-    const tbody = document.getElementById('gamesBody');
-    let html = '';
+    const container = document.querySelector('.container');
+    container.innerHTML = '';
 
     const i18n = document.getElementById('i18nOnline');
     const txtWait = i18n.getAttribute('data-waiting');
@@ -39,19 +42,19 @@ function renderGameList(games) {
         if (g.waitingForSecondPlayer) {
             if (currentUserId === g.playerXId || currentUserId === g.playerOId) {
                 actionHtml = `
-          <a class="button is-small is-link" href="/onlineGame?gameId=${g.gameId}">
+          <a class="button is-small is-link btn-w100 ml-5" href="/onlineGame?gameId=${g.gameId}">
             ${txtGo}
           </a>`;
             } else {
                 actionHtml = `
-          <a class="button is-small is-info" href="/join-online?gameId=${g.gameId}">
+          <a class="button is-small is-info btn-w100 ml-5" href="/join-online?gameId=${g.gameId}">
             ${txtJoin}
           </a>`;
             }
         } else {
             if (currentUserId === g.playerXId || currentUserId === g.playerOId) {
                 actionHtml = `
-          <a class="button is-small is-link" href="/onlineGame?gameId=${g.gameId}">
+          <a class="button is-small is-link btn-w100 ml-5" href="/onlineGame?gameId=${g.gameId}">
             ${txtGo}
           </a>`;
             } else {
@@ -59,17 +62,41 @@ function renderGameList(games) {
             }
         }
 
-        html += `
-      <tr>
-        <td>${g.gameId}</td>
-        <td>${g.playerXDisplay ?? ''}</td>
-        <td>${g.playerODisplay ?? ''}</td>
-        <td>${statusText}</td>
-        <td>${actionHtml}</td>
-      </tr>`;
-    });
+        const gameRow = document.createElement('div');
+        gameRow.className = 'box game-row';
 
-    tbody.innerHTML = html;
+        // ID
+        const idCol = document.createElement('div');
+        idCol.className = 'game-col col-id';
+        idCol.innerHTML = `<strong>ID:</strong> ${g.gameId}`;
+        gameRow.appendChild(idCol);
+
+        // Player X
+        const xCol = document.createElement('div');
+        xCol.className = 'game-col col-x';
+        xCol.innerHTML = `<strong>Player X:</strong> ${g.playerXDisplay ?? ''}`;
+        gameRow.appendChild(xCol);
+
+        // Player O
+        const oCol = document.createElement('div');
+        oCol.className = 'game-col col-o';
+        oCol.innerHTML = `<strong>Player O:</strong> ${g.playerODisplay ?? ''}`;
+        gameRow.appendChild(oCol);
+
+        // Status
+        const statusCol = document.createElement('div');
+        statusCol.className = 'game-col col-status';
+        statusCol.innerHTML = `<strong>Status:</strong> ${statusText}`;
+        gameRow.appendChild(statusCol);
+
+        // Action
+        const actionCol = document.createElement('div');
+        actionCol.className = 'game-col col-action';
+        actionCol.innerHTML = `<strong>Action:</strong> ${actionHtml}`;
+        gameRow.appendChild(actionCol);
+
+        container.appendChild(gameRow);
+    });
 }
 
 function forceRefresh() {
