@@ -19,6 +19,9 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     @Value("${app.webSocket.endpoint}")
     private String wsEndpoint;
 
+    @Value("${app.domain.name}")
+    private String domainName;
+
     @Override
     public void configureMessageBroker(MessageBrokerRegistry config) {
         config.enableSimpleBroker("/topic");
@@ -28,7 +31,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         registry.addEndpoint(wsEndpoint)
-                .setAllowedOrigins("https://tic-tac-toe.shubchynskyi.pp.ua")
+                .setAllowedOrigins(domainName)
                 .withSockJS();
     }
 
