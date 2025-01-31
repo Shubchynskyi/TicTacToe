@@ -20,7 +20,7 @@ fi
 echo "Building final image..."
 docker build \
   --build-arg JAR_NAME="$JAR_NAME" \
-  -t "$FINAL_IMAGE" \
+  --no-cache -t "$FINAL_IMAGE" \
   -f Docker-Final.Dockerfile .
 
 echo "Checking if network $NETWORK_NAME exists..."
