@@ -112,19 +112,20 @@ public class OnlineGameService {
     }
 
     public void startInactivityTimer(long gameId, SimpMessagingTemplate messagingTemplate, int minutes) {
-        stopTimerForGame(gameId);
 
         OnlineGame onlineGame = getOnlineGame(gameId);
         if (onlineGame == null || onlineGame.isFinished()) {
             return;
         }
 
+        stopTimerForGame(gameId);
+
         long totalSeconds = minutes * 60L;
         long warningSeconds = Math.max(totalSeconds - 30, 0);
 
         ScheduledFuture<?> warningFuture = scheduler.schedule(() -> {
             OnlineGame g = getOnlineGame(gameId);
-            if (g != null && !g.isFinished()) {
+            if (g != null) {
                 messagingTemplate.convertAndSend(
                         Route.TOPIC_ONLINE_GAME_PREFIX + gameId,
                         WebSocketCommand.TIME_LEFT_30
@@ -134,8 +135,7 @@ public class OnlineGameService {
 
         ScheduledFuture<?> closeFuture = scheduler.schedule(() -> {
             OnlineGame g = getOnlineGame(gameId);
-            if (g != null && !g.isFinished()) {
-                g.setFinished(true);
+            if (g != null) {
                 deleteGame(gameId);
                 messagingTemplate.convertAndSend(
                         Route.TOPIC_ONLINE_GAME_PREFIX + gameId,
