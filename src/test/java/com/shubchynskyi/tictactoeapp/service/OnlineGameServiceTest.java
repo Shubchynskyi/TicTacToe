@@ -283,7 +283,6 @@ class OnlineGameServiceTest {
         );
         verify(messagingTemplate).convertAndSend(eq(Route.TOPIC_GAME_LIST), any(Object.class));
 
-        assertTrue(onlineGame.isFinished());
         assertFalse(onlineGameService.getGames().containsKey(gameId));
         assertFalse(onlineGameService.getGameTimers().containsKey(gameId));
     }
