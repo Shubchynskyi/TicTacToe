@@ -2,21 +2,16 @@
 <html xmlns:th="http://www.thymeleaf.org" lang="en">
 <body>
 <header th:fragment="headerFrag">
-    <nav class="navbar"
-         style="background-color: #3a3a3a; padding: 0.5rem; display: flex; justify-content: space-between; align-items: center;">
-
-        <div style="margin-left: 1rem; font-weight: bold; color: #fff;">
-            TicTacToe
-        </div>
-
-        <div style="margin-right: 1rem;">
-            <a href="javascript:void(0);" onclick="changeLanguage('en');" style="margin-right: 0.5rem;">
+    <nav class="navbar">
+        <div class="brand-name">TicTacToe</div>
+        <div class="navbar-end">
+            <a href="javascript:void(0);" onclick="changeLanguage('en');">
                 <img th:src="@{/images/icon_lang/en-icon.png}" alt="EN" class="img-icon">
             </a>
-            <a href="javascript:void(0);" onclick="changeLanguage('de');" style="margin-right: 0.5rem;">
+            <a href="javascript:void(0);" onclick="changeLanguage('de');">
                 <img th:src="@{/images/icon_lang/de-icon.png}" alt="DE" class="img-icon">
             </a>
-            <a href="javascript:void(0);" onclick="changeLanguage('ua');" style="margin-right: 0.5rem;">
+            <a href="javascript:void(0);" onclick="changeLanguage('ua');">
                 <img th:src="@{/images/icon_lang/ua-icon.png}" alt="UA" class="img-icon">
             </a>
             <a href="javascript:void(0);" onclick="changeLanguage('ru');">
@@ -24,7 +19,6 @@
             </a>
         </div>
     </nav>
-
     <script>
         function changeLanguage(lang) {
             const url = new URL(window.location.href);
