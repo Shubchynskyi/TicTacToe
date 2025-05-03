@@ -28,6 +28,7 @@ docker network inspect "$NETWORK_NAME" >/dev/null 2>&1 || docker network create 
 
 echo "Starting application container and connecting to network $NETWORK_NAME..."
 docker run -d \
+  --restart unless-stopped \
   --name "$APP_CONTAINER" \
   --network "$NETWORK_NAME" \
   "$FINAL_IMAGE"
