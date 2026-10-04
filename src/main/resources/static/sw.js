@@ -1,7 +1,9 @@
-const CACHE_NAME = 'tictactoe-ui-v3';
+const RELEASE = '20261004-2';
+const CACHE_NAME = `tictactoe-ui-${RELEASE}`;
 const ASSETS = [
-    '/manifest.json', '/css/styles.css', '/js/ui.js', '/js/home.js',
-    '/js/localGame.js', '/js/online.js', '/js/onlineGame.js',
+    `/manifest.json?v=${RELEASE}`, `/css/styles.css?v=${RELEASE}`,
+    `/js/ui.js?v=${RELEASE}`, `/js/home.js?v=${RELEASE}`,
+    `/js/localGame.js?v=${RELEASE}`, `/js/online.js?v=${RELEASE}`, `/js/onlineGame.js?v=${RELEASE}`,
     '/images/icon_pwa/icon-v2-192.png', '/images/icon_pwa/icon-v2-512.png',
     '/images/icon_pwa/icon-v2-maskable-512.png',
     '/images/icon_pwa/apple-touch-icon-v2.png', '/favicon-v2.ico'
@@ -17,7 +19,7 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
     const url = new URL(event.request.url);
     // Session pages, game state and WebSocket traffic always go to the server.
-    if (event.request.method !== 'GET' || url.origin !== self.location.origin || !ASSETS.includes(url.pathname)) return;
+    if (event.request.method !== 'GET' || url.origin !== self.location.origin || !ASSETS.includes(url.pathname + url.search)) return;
     event.respondWith(fetch(event.request).then(response => {
         if (response.ok) {
             const copy = response.clone();
