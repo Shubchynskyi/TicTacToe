@@ -2,7 +2,9 @@ package com.shubchynskyi.tictactoeapp.e2e.pageobjects;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.Select;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
 import java.time.Duration;
@@ -10,36 +12,38 @@ import java.time.Duration;
 
 public class HeaderFragment {
 
-    private final WebDriver driver;
     private final WebDriverWait wait;
 
-    private final By englishLink = By.xpath("//a[@onclick=\"changeLanguage('en');\"]");
-    private final By germanLink = By.xpath("//a[@onclick=\"changeLanguage('de');\"]");
-    private final By ukrainianLink = By.xpath("//a[@onclick=\"changeLanguage('ua');\"]");
-    private final By russianLink = By.xpath("//a[@onclick=\"changeLanguage('ru');\"]");
+    private final By languageSelect = By.id("languageSelect");
 
     public HeaderFragment(WebDriver driver) {
-        this.driver = driver;
         this.wait = new WebDriverWait(driver, Duration.ofSeconds(10));
     }
 
     public void switchToEnglish() {
-        wait.until(ExpectedConditions.elementToBeClickable(englishLink));
-        driver.findElement(englishLink).click();
+        switchLanguage("en");
     }
 
     public void switchToGerman() {
-        wait.until(ExpectedConditions.elementToBeClickable(germanLink));
-        driver.findElement(germanLink).click();
+        switchLanguage("de");
     }
 
     public void switchToUkrainian() {
-        wait.until(ExpectedConditions.elementToBeClickable(ukrainianLink));
-        driver.findElement(ukrainianLink).click();
+        switchLanguage("ua");
     }
 
     public void switchToRussian() {
-        wait.until(ExpectedConditions.elementToBeClickable(russianLink));
-        driver.findElement(russianLink).click();
+        switchLanguage("ru");
+    }
+
+    private void switchLanguage(String language) {
+        WebElement dropdown = wait.until(ExpectedConditions.elementToBeClickable(languageSelect));
+        Select select = new Select(dropdown);
+        boolean changesLanguage = !language.equals(select.getFirstSelectedOption().getDomAttribute("value"));
+        select.selectByValue(language);
+        if (changesLanguage) {
+            wait.until(ExpectedConditions.stalenessOf(dropdown));
+            wait.until(ExpectedConditions.elementToBeClickable(languageSelect));
+        }
     }
 }
