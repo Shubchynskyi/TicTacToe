@@ -1,66 +1,18 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" lang="en">
-<head>
-    <title th:text="#{game.title}">Local / Single Game</title>
-    <meta charset="UTF-8"/>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
-    <link rel="stylesheet" th:href="@{/css/styles.css}"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#ffffff"/>
-    <link rel="manifest" href="/manifest.json">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <link rel="apple-touch-icon" href="/images/icon_pwa/apple-touch-icon.png">
-</head>
+<html xmlns:th="http://www.thymeleaf.org" lang="en" th:lang="${#locale.language == 'ua' ? 'uk' : #locale.language}">
+<head th:replace="~{fragments/head :: headFrag('game.title')}"></head>
 <body>
 <div th:replace="~{fragments/header :: headerFrag}"></div>
-<section class="hero is-fullheight is-flex is-flex-direction-column is-align-items-center is-justify-content-center">
-    <div class="hero-body">
-        <div class="container has-text-centered">
-            <h1 class="title" th:text="#{game.mainHeading}">Local / Single Game</h1>
-            <p id="status" class="has-text-weight-bold"
-               th:text="#{game.status}">
-                Status:
-            </p>
-
-            <div id="scorePanel" class="mb-1">
-                <p>
-                    <span th:text="#{game.scorePlayer}">Your score:</span>
-                    <span id="scoreHuman">0</span>
-                </p>
-                <p>
-                    <span th:text="#{game.scoreAI}">AI score:</span>
-                    <span id="scoreAI">0</span>
-                </p>
-            </div>
-
-            <div class="is-flex-center">
-                <div th:insert="~{fragments/board :: boardFrag}"></div>
-            </div>
-
-            <div class="button-group">
-                <button class="button btn-w200"
-                        id="restartBtn"
-                        onclick="restartLocal()"
-                        th:text="#{game.restart}">
-                    Restart
-                </button>
-                <a class="button btn-w200" href="/"
-                   th:text="#{game.goHome}">
-                    Back to Home
-                </a>
-            </div>
-        </div>
-    </div>
-</section>
-<div id="i18nLocalGame"
-     th:attr="
-       data-turn=#{game.turn},
-       data-winner=#{game.winner},
-       data-draw=#{game.draw},
-       data-restart=#{game.restart}
-     ">
-</div>
+<main class="app-main play-main">
+    <div class="play-heading"><h1 class="page-heading" th:text="#{ui.gameName}">TicTacToe</h1></div>
+    <section class="play-card" th:attr="aria-label=#{ui.board}">
+        <div id="scorePanel"><div class="score-grid"><p class="score-tile"><span class="score-label" th:text="#{game.scorePlayer}">Your score:</span><span id="scoreHuman" class="score-number">0</span></p><p class="score-tile"><span class="score-label" th:text="#{game.scoreAI}">Computer:</span><span id="scoreAI" class="score-number">0</span></p></div></div>
+        <p id="status" class="turn-status" role="status" aria-live="polite" th:text="#{game.status}">Status:</p>
+        <div th:replace="~{fragments/board :: boardFrag}"></div>
+        <div class="button-group"><button class="button is-primary btn-w200" id="restartBtn" onclick="restartLocal()" th:text="#{game.restart}">Play again</button><a class="button btn-w200" href="/" th:text="#{game.goHome}">Back to Home</a></div>
+    </section>
+</main>
+<div id="i18nLocalGame" hidden th:attr="data-turn=#{game.turn},data-winner=#{game.winner},data-draw=#{game.draw},data-restart=#{game.restart}"></div>
 <script th:src="@{/js/localGame.js}"></script>
 </body>
 </html>

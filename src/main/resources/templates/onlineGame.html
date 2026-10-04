@@ -1,140 +1,23 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" lang="en">
-<head>
-    <title th:text="#{onlineGame.title}">Online Game</title>
-    <meta charset="UTF-8"/>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
-    <link rel="stylesheet" th:href="@{/css/styles.css}"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#ffffff"/>
-    <link rel="manifest" href="/manifest.json">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <link rel="apple-touch-icon" href="/images/icon_pwa/apple-touch-icon.png">
-</head>
+<html xmlns:th="http://www.thymeleaf.org" lang="en" th:lang="${#locale.language == 'ua' ? 'uk' : #locale.language}">
+<head th:replace="~{fragments/head :: headFrag('onlineGame.title')}"></head>
 <body>
 <div th:replace="~{fragments/header :: headerFrag}"></div>
-<section class="hero is-fullheight is-flex is-flex-direction-column is-align-items-center is-justify-content-center">
-    <div class="hero-body">
-        <div class="container has-text-centered">
-            <h1 class="title">
-                <span th:text="#{onlineGame.heading}">Online Game #</span>
-                <span id="gameId"></span>
-            </h1>
-            <input type="hidden" id="userIdHidden" th:value="${session.userId}"/>
-            <p>
-                <span th:text="#{onlineGame.yourNick}">Your nickname:</span>
-                <span id="nick" class="has-text-weight-bold has-text-success"
-                      th:text="${nick}">Guest</span>
-            </p>
-            <div class="box mb-1">
-                <p>
-                    <span th:text="#{onlineGame.yourSymbol}">Your symbol:</span>
-                    <span id="yourSymbol" class="has-text-weight-bold"></span>
-                </p>
-                <p>
-                    <span th:text="#{onlineGame.playerX}">Player X:</span>
-                    <span id="playerX">X</span>
-                    ( <span th:text="#{onlineGame.score}">score</span>:
-                    <span id="scoreX" class="has-text-weight-bold">0</span> )
-                    vs
-                    <span th:text="#{onlineGame.playerO}">Player O:</span>
-                    <span id="playerO">O</span>
-                    ( <span th:text="#{onlineGame.score}">score</span>:
-                    <span id="scoreO" class="has-text-weight-bold">0</span> )
-                </p>
-                <p id="turnInfoEl" class="is-italic mt-05"></p>
-            </div>
-            <!-- Board and Rematch -->
-            <div class="game-container">
-                <div th:insert="~{fragments/board :: boardFrag}"></div>
-                <button id="rematchBtn"
-                        class="button is-warning"
-                        onclick="rematch()"
-                        th:text="#{onlineGame.rematch}">
-                    Rematch
-                </button>
-            </div>
-            <!-- "Leave" / "Back to list" -->
-            <div class="button-group">
-                <button class="button is-danger btn-w200"
-                        onclick="showCreatorLeaveModal()"
-                        th:text="#{onlineGame.leave}">
-                    Leave the game
-                </button>
-                <a class="button is-link btn-w200"
-                   href="/online"
-                   th:text="#{onlineGame.backToList}">
-                    Back to list
-                </a>
-            </div>
-        </div>
-    </div>
-</section>
-<!-- Modal -->
-<div id="timeLeft30Modal" class="modal">
-    <div class="modal-content">
-        <h3 class="title is-4" th:text="#{onlineGame.timeLeft}">30 seconds left!</h3>
-        <p th:text="#{onlineGame.continueOrLeave}">You can continue or leave.</p>
-        <br/>
-        <div class="modal-btn-col">
-            <button class="button is-primary btn-w200"
-                    onclick="closeTimeLeft30Modal()"
-                    th:text="#{onlineGame.continue}">
-                Continue
-            </button>
-            <button class="button is-danger btn-w200"
-                    onclick="leaveCurrentGame()"
-                    th:text="#{onlineGame.leave}">
-                Leave
-            </button>
-        </div>
-    </div>
-</div>
-<div id="sessionClosedModal" class="modal">
-    <div class="modal-content">
-        <h3 class="title is-4" th:text="#{onlineGame.sessionClosed}">Session closed</h3>
-        <p>
-            <span th:text="#{onlineGame.returnIn}">Returning in</span>
-            <span id="closeTimer">5</span>
-            <span th:text="#{onlineGame.seconds}">seconds...</span>
-        </p>
-        <br/>
-        <button class="button is-info btn-w200"
-                onclick="goToListNow()"
-                th:text="#{onlineGame.exitNow}">
-            Exit now
-        </button>
-    </div>
-</div>
-<div id="creatorLeaveModal" class="modal">
-    <div class="modal-content">
-        <h3 class="title is-4" th:text="#{onlineGame.leaveGame}">Leaving the game</h3>
-        <p th:text="#{onlineGame.areYouSure}">Are you sure?</p>
-        <br/>
-        <div class="modal-btn-col">
-            <button class="button is-danger btn-w200"
-                    onclick="confirmCreatorLeave()"
-                    th:text="#{onlineGame.leave}">
-                Leave
-            </button>
-            <button class="button btn-w200"
-                    onclick="cancelCreatorLeave()"
-                    th:text="#{onlineGame.cancel}">
-                Cancel
-            </button>
-        </div>
-    </div>
-</div>
-<div id="i18nOnlineGame"
-     th:attr="
-       data-your-turn=#{onlineGame.yourTurn},
-       data-wait-x=#{onlineGame.waitPlayerX},
-       data-wait-o=#{onlineGame.waitPlayerO},
-       data-draw=#{onlineGame.draw},
-       data-winner=#{onlineGame.winner}
-     ">
-</div>
+<main class="app-main play-main">
+    <div class="play-heading"><h1 class="page-heading"><span th:text="#{onlineGame.heading}">Online game #</span><span id="gameId"></span></h1></div>
+    <input type="hidden" id="userIdHidden" th:value="${session.userId}">
+    <section class="play-card" th:attr="aria-label=#{ui.board}">
+        <div class="player-summary"><span><span th:text="#{onlineGame.yourNick}">Your nickname:</span> <span id="nick" th:text="${nick}">Guest</span></span><span><span th:text="#{onlineGame.yourSymbol}">Your symbol:</span> <strong id="yourSymbol"></strong></span></div>
+        <div class="score-grid online-scores"><p class="score-tile"><span class="score-label"><span th:text="#{onlineGame.playerX}">Player X</span><span id="playerX">X</span></span><span id="scoreX" class="score-number">0</span></p><p class="score-tile"><span class="score-label"><span th:text="#{onlineGame.playerO}">Player O</span><span id="playerO">O</span></span><span id="scoreO" class="score-number">0</span></p></div>
+        <p id="turnInfoEl" class="turn-status" role="status" aria-live="polite"></p>
+        <div class="game-container"><div th:replace="~{fragments/board :: boardFrag}"></div><button id="rematchBtn" class="button is-warning" onclick="rematch()" th:text="#{onlineGame.rematch}">Rematch</button></div>
+        <div class="button-group"><button class="button is-danger btn-w200" onclick="showCreatorLeaveModal()" th:text="#{onlineGame.leave}">Leave the game</button><a class="button is-link btn-w200" href="/online" th:text="#{onlineGame.backToList}">Back to list</a></div>
+    </section>
+</main>
+<div id="timeLeft30Modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="timeLeftHeading"><div class="modal-content"><h3 id="timeLeftHeading" th:text="#{onlineGame.timeLeft}">30 seconds left!</h3><p th:text="#{onlineGame.continueOrLeave}">You can continue or leave.</p><div class="modal-btn-col"><button class="button is-primary btn-w200" onclick="closeTimeLeft30Modal()" th:text="#{onlineGame.continue}">Continue</button><button class="button is-danger btn-w200" onclick="leaveCurrentGame()" th:text="#{onlineGame.leave}">Leave</button></div></div></div>
+<div id="sessionClosedModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="sessionClosedHeading"><div class="modal-content"><h3 id="sessionClosedHeading" th:text="#{onlineGame.sessionClosed}">Session closed</h3><p><span th:text="#{onlineGame.returnIn}">Returning in</span> <span id="closeTimer">5</span> <span th:text="#{onlineGame.seconds}">seconds...</span></p><div class="modal-btn-col"><button class="button is-info btn-w200" onclick="goToListNow()" th:text="#{onlineGame.exitNow}">Exit now</button></div></div></div>
+<div id="creatorLeaveModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="creatorLeaveHeading"><div class="modal-content"><h3 id="creatorLeaveHeading" th:text="#{onlineGame.leaveGame}">Leaving the game</h3><p th:text="#{onlineGame.areYouSure}">Are you sure?</p><div class="modal-btn-col"><button class="button is-danger btn-w200" onclick="confirmCreatorLeave()" th:text="#{onlineGame.leave}">Leave</button><button class="button btn-w200" onclick="cancelCreatorLeave()" th:text="#{onlineGame.cancel}">Cancel</button></div></div></div>
+<div id="i18nOnlineGame" hidden th:attr="data-your-turn=#{onlineGame.yourTurn},data-waiting=#{online.waiting},data-wait-x=#{onlineGame.waitPlayerX},data-wait-o=#{onlineGame.waitPlayerO},data-draw=#{onlineGame.draw},data-winner=#{onlineGame.winner}"></div>
 <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
 <script th:src="@{/js/onlineGame.js}"></script>

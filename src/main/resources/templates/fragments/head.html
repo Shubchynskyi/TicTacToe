@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head th:fragment="headFrag(titleKey)">
+    <meta charset="UTF-8">
+    <title th:text="${#messages.msg(titleKey)}">TicTacToe</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#f6f5ef">
+    <meta name="color-scheme" content="light dark">
+    <meta name="app-language" content="en" th:content="${#locale.language}">
+    <script>
+        (() => {
+            const supported = ['en', 'de', 'ua', 'ru'];
+            function normalizeLanguage(language) {
+                const code = (language || '').toLowerCase().split(/[-_]/)[0];
+                return code === 'uk' ? 'ua' : (supported.includes(code) ? code : null);
+            }
+            let savedLanguage = null;
+            try { savedLanguage = normalizeLanguage(localStorage.getItem('tictactoe-language')); }
+            catch (error) { /* Browser preferences still work when storage is blocked. */ }
+            const url = new URL(window.location.href);
+            const requested = normalizeLanguage(url.searchParams.get('lang'));
+            const browserLanguage = [...(navigator.languages || []), navigator.language]
+                .map(normalizeLanguage).find(Boolean);
+            const language = requested || savedLanguage || browserLanguage || 'en';
+            const renderedLanguage = document.querySelector('meta[name="app-language"]').content;
+            // The existing server uses "ua" for Ukrainian; browsers use "uk".
+            if (renderedLanguage !== language || (requested && url.searchParams.get('lang') !== language)) {
+                url.searchParams.set('lang', language);
+                window.location.replace(url.toString());
+            }
+        })();
+    </script>
+    <script>
+        try {
+            const savedTheme = localStorage.getItem('tictactoe-theme');
+            document.documentElement.dataset.theme = savedTheme === 'light' || savedTheme === 'dark'
+                ? savedTheme : (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        } catch (error) {
+            document.documentElement.dataset.theme = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        }
+    </script>
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+    <link rel="manifest" th:href="@{/manifest.json}">
+    <link rel="icon" th:href="@{/favicon-v2.ico}">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <link rel="apple-touch-icon" th:href="@{/images/icon_pwa/apple-touch-icon-v2.png}">
+    <script defer th:src="@{/js/ui.js}"></script>
+</head>
+</html>

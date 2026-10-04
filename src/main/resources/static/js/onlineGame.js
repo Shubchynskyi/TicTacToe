@@ -130,6 +130,8 @@ function updateStatus(onlineGame) {
     const game = onlineGame.game;
     const turnInfo = document.getElementById('turnInfoEl');
     const rematchBtn = document.getElementById('rematchBtn');
+    turnInfo.dataset.player = displaySymbol(game.currentPlayer);
+    turnInfo.dataset.finished = String(onlineGame.finished);
 
     const i18nEl = document.getElementById('i18nOnlineGame');
     const txtYourTurn = i18nEl.getAttribute('data-your-turn');
@@ -176,16 +178,20 @@ function updateStatus(onlineGame) {
 
     if (!onlineGame.finished) {
         rematchBtn.style.display = 'none';
+        if (onlineGame.waitingForSecondPlayer) {
+            turnInfo.textContent = i18nEl.getAttribute('data-waiting');
+            return;
+        }
 
         if (game.currentPlayer === "X") {
             if (onlineGame.playerXId === currentUserId) {
-                turnInfo.innerHTML = "<b>" + txtYourTurn + "</b>";
+                turnInfo.textContent = txtYourTurn;
             } else {
                 turnInfo.innerText = txtWaitX + " " + (onlineGame.playerXDisplay ?? "X");
             }
         } else {
             if (onlineGame.playerOId === currentUserId) {
-                turnInfo.innerHTML = "<b>" + txtYourTurn + "</b>";
+                turnInfo.textContent = txtYourTurn;
             } else {
                 turnInfo.innerText = txtWaitO + " " + (onlineGame.playerODisplay ?? "O");
             }
@@ -195,11 +201,11 @@ function updateStatus(onlineGame) {
         rematchBtn.style.display = 'inline-block';
 
         if (game.winner === "DRAW") {
-            turnInfo.innerHTML = "<b>" + txtDraw + "</b>";
+            turnInfo.textContent = txtDraw;
         } else if (game.winner === "X") {
-            turnInfo.innerHTML = "<b>" + txtWinner + " " + (onlineGame.playerXDisplay ?? "X") + "</b>";
-        } else if (game.winner === "O") {
-            turnInfo.innerHTML = "<b>" + txtWinner + " " + (onlineGame.playerODisplay ?? "O") + "</b>";
+            turnInfo.textContent = txtWinner + ' ' + (onlineGame.playerXDisplay ?? 'X');
+        } else if (displaySymbol(game.winner) === "O") {
+            turnInfo.textContent = txtWinner + ' ' + (onlineGame.playerODisplay ?? 'O');
         }
     }
 }
@@ -215,9 +221,8 @@ function updateBoard(onlineGameObj) {
     for (let i = 0; i < 9; i++) {
         const sign = gameObj.board[i];
         const cell = document.getElementById('cell' + i);
-        cell.innerText = (sign === 'CROSS') ? 'X'
-            : (sign === 'NOUGHT') ? 'O'
-                : '';
+        const symbol = sign === 'CROSS' ? 'X' : sign === 'NOUGHT' ? 'O' : '';
+        paintBoardCell(cell, i, symbol, onlineGameObj.finished || onlineGameObj.waitingForSecondPlayer);
     }
 
     const isDraw = (gameObj.winner === 'DRAW');

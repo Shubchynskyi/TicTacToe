@@ -1,104 +1,58 @@
 let stompList = null;
-let currentUserId = "";
+let currentUserId = '';
 
 window.addEventListener('load', () => {
-    const uidElem = document.getElementById('userIdHidden');
-    if (uidElem) {
-        currentUserId = uidElem.value;
-    }
+    currentUserId = document.getElementById('userIdHidden').value;
     connectList();
 });
-
-// WebSocket
 function connectList() {
     const sock = new SockJS('/ws');
     stompList = Stomp.over(sock);
-    stompList.connect({}, frame => {
-        console.log("Connected => /topic/game-list", frame);
-        stompList.subscribe("/topic/game-list", msg => {
-            const games = JSON.parse(msg.body);
-            renderGameList(games);
-        });
-    }, error => {
-        console.error("WebSocket connection error:", error);
-    });
+    stompList.connect({}, () => {
+        stompList.subscribe('/topic/game-list', message => renderGameList(JSON.parse(message.body)));
+    }, error => console.error('WebSocket connection error:', error));
 }
-
 function renderGameList(games) {
-    const container = document.querySelector('.container');
-    container.innerHTML = '';
-
-    const i18n = document.getElementById('i18nOnline');
-    const txtWait = i18n.getAttribute('data-waiting');
-    const txtProg = i18n.getAttribute('data-progress');
-    const txtGo = i18n.getAttribute('data-go');
-    const txtJoin = i18n.getAttribute('data-join');
-    const txtInpr = i18n.getAttribute('data-inprogress');
-
-    games.forEach(g => {
-        const statusText = g.waitingForSecondPlayer ? txtWait : txtProg;
-
-        let actionHtml = '';
-        if (g.waitingForSecondPlayer) {
-            if (currentUserId === g.playerXId || currentUserId === g.playerOId) {
-                actionHtml = `
-          <a class="button is-small is-link btn-w100 ml-5" href="/onlineGame?gameId=${g.gameId}">
-            ${txtGo}
-          </a>`;
-            } else {
-                actionHtml = `
-          <a class="button is-small is-info btn-w100 ml-5" href="/join-online?gameId=${g.gameId}">
-            ${txtJoin}
-          </a>`;
-            }
+    const container = document.getElementById('gameList');
+    const i18n = document.getElementById('i18nOnline').dataset;
+    container.replaceChildren();
+    document.getElementById('lobbyEmpty').hidden = games.length !== 0;
+    function column(className, label, value) {
+        const element = document.createElement('div');
+        element.className = 'game-col ' + className;
+        const heading = document.createElement('strong');
+        heading.textContent = label;
+        const text = document.createElement('span');
+        text.textContent = value ?? '';
+        element.append(heading, text);
+        return element;
+    }
+    games.forEach(game => {
+        const row = document.createElement('article');
+        row.className = 'box game-row';
+        const xColumn = column('col-x', i18n.playerX, game.playerXDisplay);
+        const oColumn = column('col-o', i18n.playerO, game.playerODisplay);
+        if (currentUserId === game.playerXId) xColumn.lastChild.classList.add('has-text-weight-bold');
+        if (currentUserId === game.playerOId) oColumn.lastChild.classList.add('has-text-weight-bold');
+        const statusColumn = column('col-status', i18n.status, game.waitingForSecondPlayer ? i18n.waiting : i18n.progress);
+        statusColumn.lastChild.className = 'status-pill' + (game.waitingForSecondPlayer ? ' is-waiting' : '');
+        const action = document.createElement('div');
+        action.className = 'game-col col-action';
+        const isPlayer = currentUserId === game.playerXId || currentUserId === game.playerOId;
+        if (isPlayer || game.waitingForSecondPlayer) {
+            const link = document.createElement('a');
+            link.className = 'button is-link btn-w100';
+            link.href = (isPlayer ? '/onlineGame' : '/join-online') + '?gameId=' + encodeURIComponent(game.gameId);
+            link.textContent = isPlayer ? i18n.go : i18n.join;
+            action.appendChild(link);
         } else {
-            if (currentUserId === g.playerXId || currentUserId === g.playerOId) {
-                actionHtml = `
-          <a class="button is-small is-link btn-w100 ml-5" href="/onlineGame?gameId=${g.gameId}">
-            ${txtGo}
-          </a>`;
-            } else {
-                actionHtml = txtInpr;
-            }
+            const label = document.createElement('span');
+            label.className = 'status-pill';
+            label.textContent = i18n.inprogress;
+            action.appendChild(label);
         }
-
-        const gameRow = document.createElement('div');
-        gameRow.className = 'box game-row';
-
-        // ID
-        const idCol = document.createElement('div');
-        idCol.className = 'game-col col-id';
-        idCol.innerHTML = `<strong>ID:</strong> ${g.gameId}`;
-        gameRow.appendChild(idCol);
-
-        // Player X
-        const xCol = document.createElement('div');
-        xCol.className = 'game-col col-x';
-        xCol.innerHTML = `<strong>Player X:</strong> ${g.playerXDisplay ?? ''}`;
-        gameRow.appendChild(xCol);
-
-        // Player O
-        const oCol = document.createElement('div');
-        oCol.className = 'game-col col-o';
-        oCol.innerHTML = `<strong>Player O:</strong> ${g.playerODisplay ?? ''}`;
-        gameRow.appendChild(oCol);
-
-        // Status
-        const statusCol = document.createElement('div');
-        statusCol.className = 'game-col col-status';
-        statusCol.innerHTML = `<strong>Status:</strong> ${statusText}`;
-        gameRow.appendChild(statusCol);
-
-        // Action
-        const actionCol = document.createElement('div');
-        actionCol.className = 'game-col col-action';
-        actionCol.innerHTML = `<strong>Action:</strong> ${actionHtml}`;
-        gameRow.appendChild(actionCol);
-
-        container.appendChild(gameRow);
+        row.append(column('col-id', i18n.room, game.gameId), xColumn, oColumn, statusColumn, action);
+        container.appendChild(row);
     });
 }
-
-function forceRefresh() {
-    window.location.reload();
-}
+function forceRefresh() { window.location.reload(); }

@@ -1,31 +1,23 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="en">
 <body>
-<header th:fragment="headerFrag">
-    <nav class="navbar">
-        <div class="brand-name">TicTacToe</div>
+<header th:fragment="headerFrag" class="app-header">
+    <nav class="navbar" th:attr="aria-label=#{ui.navigation}">
+        <a class="brand-name" href="/" aria-label="TicTacToe"><img class="brand-mark" th:src="@{/images/icon_pwa/icon-v2-192.png}" width="44" height="44" alt=""><span class="brand-text">TicTacToe</span></a>
         <div class="navbar-end">
-            <a href="javascript:void(0);" onclick="changeLanguage('en');">
-                <img th:src="@{/images/icon_lang/en-icon.png}" alt="EN" class="img-icon">
-            </a>
-            <a href="javascript:void(0);" onclick="changeLanguage('de');">
-                <img th:src="@{/images/icon_lang/de-icon.png}" alt="DE" class="img-icon">
-            </a>
-            <a href="javascript:void(0);" onclick="changeLanguage('ua');">
-                <img th:src="@{/images/icon_lang/ua-icon.png}" alt="UA" class="img-icon">
-            </a>
-            <a href="javascript:void(0);" onclick="changeLanguage('ru');">
-                <img th:src="@{/images/icon_lang/ru-icon.png}" alt="RU" class="img-icon">
-            </a>
+            <button type="button" id="themeToggle" class="icon-button" th:attr="aria-label=#{ui.theme},title=#{ui.theme}">
+                <svg class="theme-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M20.5 14.3A8.5 8.5 0 0 1 9.7 3.5 8.5 8.5 0 1 0 20.5 14.3Z"/></svg>
+                <svg class="theme-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></svg>
+            </button>
+            <label class="sr-only" for="languageSelect" th:text="#{ui.language}">Language</label>
+            <select id="languageSelect" class="language-select">
+                <option value="en" lang="en" th:selected="${#locale.language == 'en'}">English</option>
+                <option value="de" lang="de" th:selected="${#locale.language == 'de'}">Deutsch</option>
+                <option value="ua" lang="uk" th:selected="${#locale.language == 'ua'}">Українська</option>
+                <option value="ru" lang="ru" th:selected="${#locale.language == 'ru'}">Русский</option>
+            </select>
         </div>
     </nav>
-    <script>
-        function changeLanguage(lang) {
-            const url = new URL(window.location.href);
-            url.searchParams.set('lang', lang);
-            window.location.href = url.toString();
-        }
-    </script>
 </header>
 </body>
 </html>

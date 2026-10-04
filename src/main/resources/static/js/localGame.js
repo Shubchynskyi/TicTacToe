@@ -31,13 +31,8 @@ function updateBoard(game) {
     }
 
     for (let i = 0; i < 9; i++) {
-        if (game.board[i] === 'CROSS') {
-            document.getElementById('cell' + i).innerText = 'X';
-        } else if (game.board[i] === 'NOUGHT') {
-            document.getElementById('cell' + i).innerText = 'O';
-        } else {
-            document.getElementById('cell' + i).innerText = '';
-        }
+        const symbol = game.board[i] === 'CROSS' ? 'X' : game.board[i] === 'NOUGHT' ? 'O' : '';
+        paintBoardCell(document.getElementById('cell' + i), i, symbol, game.gameOver);
     }
 
     if (game.winner && game.winner !== 'DRAW' && game.winningCombo) {
@@ -69,6 +64,8 @@ function updateStatus(game) {
     const textRestart = i18nEl.getAttribute('data-restart');
     const statusEl = document.getElementById('status');
     const btnRestart = document.getElementById('restartBtn');
+    statusEl.dataset.player = displaySymbol(game.currentPlayer);
+    statusEl.dataset.finished = String(game.gameOver);
 
     if (game.gameMode === 'single') {
         document.getElementById('scorePanel').style.display = 'block';
@@ -83,11 +80,11 @@ function updateStatus(game) {
         if (game.winner === 'DRAW') {
             statusEl.innerText = textDraw;
         } else {
-            statusEl.innerText = textWinner + ' ' + game.winner;
+            statusEl.innerText = textWinner + ' ' + displaySymbol(game.winner);
         }
     } else {
         btnRestart.innerText = textRestart;
-        statusEl.innerText = textTurn + ' ' + game.currentPlayer;
+        statusEl.innerText = textTurn + ' ' + displaySymbol(game.currentPlayer);
     }
 }
 

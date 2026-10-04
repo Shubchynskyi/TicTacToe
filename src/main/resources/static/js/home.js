@@ -1,11 +1,3 @@
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js')
-            .then(reg => console.log('ServiceWorker registered', reg))
-            .catch(err => console.error('SW reg failed', err));
-    });
-}
-
 function changeNickname() {
     const newNick = document.getElementById('nickInput').value.trim();
     if (newNick) {
@@ -29,14 +21,14 @@ function onGameModeChange(value) {
         btnLocal.classList.remove('is-info', 'chosen-mode');
         gameModeHidden.value = 'single';
     } else {
-        singleSettings.style.display = 'block';
-        singleSettings.style.opacity = '0.4';
-        singleSettings.style.pointerEvents = 'none';
+        singleSettings.style.display = 'none';
 
         btnLocal.classList.add('is-info', 'chosen-mode');
         btnSingle.classList.remove('is-info', 'chosen-mode');
         gameModeHidden.value = 'local';
     }
+    btnSingle.setAttribute('aria-pressed', String(value === 'single'));
+    btnLocal.setAttribute('aria-pressed', String(value === 'local'));
 }
 
 window.addEventListener('load', () => {
@@ -50,6 +42,10 @@ window.addEventListener('load', () => {
     }
 
     updateDiffDisplay();
+    selectSymbol(displaySymbol(symHidden.value) === 'O' ? 'O' : 'X');
+    document.getElementById('nickInput').addEventListener('keydown', event => {
+        if (event.key === 'Enter') { event.preventDefault(); changeNickname(); }
+    });
 });
 
 function selectSymbol(symbol) {
@@ -64,6 +60,8 @@ function selectSymbol(symbol) {
         btnO.classList.add('selected');
     }
     document.getElementById('playerSymbolHidden').value = symbol;
+    btnX.setAttribute('aria-pressed', String(symbol === 'X'));
+    btnO.setAttribute('aria-pressed', String(symbol === 'O'));
 }
 
 function prevDifficulty() {

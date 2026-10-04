@@ -1,23 +1,17 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="en">
 <body>
-<div th:fragment="boardFrag">
-    <div class="board-mtop">
-        <div class="flex-row">
-            <div id="cell0" class="box cell-60" onclick="makeMove(0,0)"></div>
-            <div id="cell1" class="box cell-60" onclick="makeMove(0,1)"></div>
-            <div id="cell2" class="box cell-60" onclick="makeMove(0,2)"></div>
-        </div>
-        <div class="flex-row">
-            <div id="cell3" class="box cell-60" onclick="makeMove(1,0)"></div>
-            <div id="cell4" class="box cell-60" onclick="makeMove(1,1)"></div>
-            <div id="cell5" class="box cell-60" onclick="makeMove(1,2)"></div>
-        </div>
-        <div class="flex-row">
-            <div id="cell6" class="box cell-60" onclick="makeMove(2,0)"></div>
-            <div id="cell7" class="box cell-60" onclick="makeMove(2,1)"></div>
-            <div id="cell8" class="box cell-60" onclick="makeMove(2,2)"></div>
-        </div>
+<div th:fragment="boardFrag" class="board-mtop">
+    <div class="game-board" role="group" th:attr="aria-label=#{ui.board},data-cell-label=#{ui.cell}">
+        <button type="button" id="cell0" class="box cell-60" onclick="makeMove(0,0)" th:attr="aria-label=#{ui.cell} + ' 1'"></button>
+        <button type="button" id="cell1" class="box cell-60" onclick="makeMove(0,1)" th:attr="aria-label=#{ui.cell} + ' 2'"></button>
+        <button type="button" id="cell2" class="box cell-60" onclick="makeMove(0,2)" th:attr="aria-label=#{ui.cell} + ' 3'"></button>
+        <button type="button" id="cell3" class="box cell-60" onclick="makeMove(1,0)" th:attr="aria-label=#{ui.cell} + ' 4'"></button>
+        <button type="button" id="cell4" class="box cell-60" onclick="makeMove(1,1)" th:attr="aria-label=#{ui.cell} + ' 5'"></button>
+        <button type="button" id="cell5" class="box cell-60" onclick="makeMove(1,2)" th:attr="aria-label=#{ui.cell} + ' 6'"></button>
+        <button type="button" id="cell6" class="box cell-60" onclick="makeMove(2,0)" th:attr="aria-label=#{ui.cell} + ' 7'"></button>
+        <button type="button" id="cell7" class="box cell-60" onclick="makeMove(2,1)" th:attr="aria-label=#{ui.cell} + ' 8'"></button>
+        <button type="button" id="cell8" class="box cell-60" onclick="makeMove(2,2)" th:attr="aria-label=#{ui.cell} + ' 9'"></button>
     </div>
 </div>
 </body>
