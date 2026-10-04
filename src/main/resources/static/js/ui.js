@@ -34,9 +34,62 @@
         catch (error) { applyTheme(event.matches ? 'dark' : 'light'); }
     });
 
+    const installButton = document.getElementById('installApp');
+    if (installButton) {
+        const appMode = matchMedia('(display-mode: standalone), (display-mode: fullscreen), (display-mode: minimal-ui)');
+        const installHelp = document.getElementById('installHelp');
+        let installPrompt = null;
+        let installed = false;
+
+        function updateInstallButton() {
+            installButton.hidden = installed || appMode.matches || navigator.standalone === true;
+        }
+
+        function showInstallHelp() {
+            const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent || '')
+                || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+            document.getElementById('installBrowserHelp').hidden = isIos;
+            document.getElementById('installIosHelp').hidden = !isIos;
+            if (!installHelp.open) installHelp.showModal();
+        }
+
+        window.addEventListener('beforeinstallprompt', event => {
+            event.preventDefault();
+            installPrompt = event;
+            updateInstallButton();
+        });
+        window.addEventListener('appinstalled', () => {
+            installed = true;
+            installPrompt = null;
+            updateInstallButton();
+        });
+        appMode.addEventListener('change', updateInstallButton);
+        installButton.addEventListener('click', async () => {
+            if (!installPrompt) {
+                showInstallHelp();
+                return;
+            }
+            const prompt = installPrompt;
+            installPrompt = null;
+            installButton.disabled = true;
+            try {
+                await prompt.prompt();
+                const choice = await prompt.userChoice;
+                installed = installed || choice.outcome === 'accepted';
+            } catch (error) {
+                console.error('App installation prompt failed', error);
+                showInstallHelp();
+            } finally {
+                installButton.disabled = false;
+                updateInstallButton();
+            }
+        });
+        updateInstallButton();
+    }
+
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-            navigator.serviceWorker.register('/sw.js?v=20261004-2', { updateViaCache: 'none' })
+            navigator.serviceWorker.register('/sw.js?v=20261004-3', { scope: '/', updateViaCache: 'none' })
                 .catch(error => console.error('Service worker registration failed', error));
         });
     }

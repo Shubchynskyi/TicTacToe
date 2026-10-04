@@ -8,6 +8,7 @@
         <section class="hero-copy">
             <h1 class="hero-title" th:text="#{ui.gameName}">TicTacToe</h1>
             <p class="hero-description" th:text="#{ui.heroDescription}">Play against the computer, with two players on one device, or online.</p>
+            <button id="installApp" class="button install-app" type="button" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M12 3v12m-4-4 4 4 4-4M5 15v5h14v-5"/></svg><span th:text="#{ui.installApp}">Install app</span></button>
             <div class="hero-art"><img class="hero-logo" th:src="@{/images/icon_pwa/icon-v2-512.png}" width="220" height="220" alt=""></div>
         </section>
         <section class="setup-card" aria-labelledby="setupHeading">
@@ -20,6 +21,11 @@
                 <div class="field">
                     <span class="label" id="modeLabel" th:text="#{index.gameMode}">Game mode:</span>
                     <div class="mode-options" role="group" aria-labelledby="modeLabel">
+                        <a id="onlineMode" class="button btn-mode online-mode" href="/online">
+                            <svg class="mode-icon" viewBox="0 0 26 22" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="13" cy="11" r="9"/><path d="M4 11h18M13 2c-6 6-6 12 0 18m0-18c6 6 6 12 0 18"/></svg>
+                            <span class="mode-copy"><span th:text="#{ui.onlineMode}">Play online</span><span class="mode-description" th:text="#{ui.onlineModeDescription}">Create or join a game</span></span>
+                            <svg class="mode-arrow" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M4 10h12m-5-5 5 5-5 5"/></svg>
+                        </a>
                         <button type="button" class="button btn-mode" id="btnSingle" onclick="onGameModeChange('single')" th:classappend="${lastSymbol != null} ? ' is-info chosen-mode' : ''" th:attr="aria-pressed=${lastSymbol != null}">
                             <svg class="mode-icon" viewBox="0 0 26 22" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="5" y="3" width="16" height="16" rx="4"/><path d="M9 0v3m8-3v3M9 19v3m8-3v3M2 7h3m-3 8h3m16-8h3m-3 8h3"/><circle cx="10" cy="10" r=".8" fill="currentColor"/><circle cx="16" cy="10" r=".8" fill="currentColor"/><path d="M10 14h6"/></svg>
                             <span th:text="#{index.singlePlayer}">Vs computer</span><span class="mode-description" th:text="#{ui.singleDescription}">Four difficulty levels</span>
@@ -39,10 +45,15 @@
                 </div>
                 <div class="start-game"><button class="button is-primary btn-w200 mt-1" type="submit" th:text="#{index.newGame}">New game</button></div>
             </form>
-            <a class="online-link" href="/online"><span th:text="#{index.onlineLink}">Play online</span><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M4 10h12m-5-5 5 5-5 5"/></svg></a>
         </section>
     </div>
 </main>
-<script th:src="@{/js/home.js(v='20261004-2')}"></script>
+<dialog id="installHelp" class="install-dialog" aria-labelledby="installHelpTitle">
+    <h2 id="installHelpTitle" th:text="#{ui.installApp}">Install app</h2>
+    <p id="installBrowserHelp" th:text="#{ui.installBrowserHelp}">Open your browser menu and choose Install app or Add to Home screen.</p>
+    <p id="installIosHelp" hidden th:text="#{ui.installIosHelp}">Open the Share menu and choose Add to Home Screen.</p>
+    <form method="dialog"><button class="button" th:text="#{ui.close}">Close</button></form>
+</dialog>
+<script th:src="@{/js/home.js(v='20261004-3')}"></script>
 </body>
 </html>

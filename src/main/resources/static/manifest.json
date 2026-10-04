@@ -1,6 +1,8 @@
 {
   "name": "TicTacToe",
   "short_name": "TicTacToe",
+  "id": "/",
+  "scope": "/",
   "start_url": "/?source=pwa",
   "display": "standalone",
   "background_color": "#f6f5ef",

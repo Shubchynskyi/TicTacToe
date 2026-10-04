@@ -1,4 +1,4 @@
-const RELEASE = '20261004-2';
+const RELEASE = '20261004-3';
 const CACHE_NAME = `tictactoe-ui-${RELEASE}`;
 const ASSETS = [
     `/manifest.json?v=${RELEASE}`, `/css/styles.css?v=${RELEASE}`,
